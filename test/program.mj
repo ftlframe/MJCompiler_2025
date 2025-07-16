@@ -1,0 +1,7 @@
+program MJProgram
+	set b;
+{
+	void main() {
+		b = new	set[5];
+	}
+}

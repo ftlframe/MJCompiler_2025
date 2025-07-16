@@ -1,0 +1,59 @@
+// Test302 - Similar to 301 but without matrices.
+
+program test302
+
+	const int zero = 0;
+	const int one = 1;
+	const int five = 5;
+
+	int intArray[];
+	char charArray[];
+
+	int globalVar;
+	
+{
+	void main()	
+		int score;
+		bool flag;
+	{
+		// Basic arithmetic and assignments
+		score = 10;
+		score++;
+		score = score + five;
+		score = score * 2;
+		score--;
+		print(score);  // Expected output: 29
+
+		// Integer array operations
+		intArray = new int[5];
+		intArray[zero] = 100;
+		intArray[one] = 200;
+		intArray[4] = intArray[zero] + intArray[one]; // 100 + 200 = 300
+		print(intArray[4]); // Expected output: 300
+		
+		intArray[one + one] = 50; // intArray[2] = 50
+		print(intArray[2]); // Expected output: 50
+			
+		// Character array operations
+		charArray = new char[4];
+		charArray[0] = 'H';
+		charArray[one] = 'i';
+		charArray[3] = '!';
+		print(charArray[zero]); // Expected output: H
+		print(charArray[1]);   // Expected output: i
+			
+		// Read and complex expression
+		globalVar = 4;
+		read(score); // User input for score
+		
+		// Example: if user inputs 10
+		// score = -10 + (5 * 4 / 2 - 1) * 10 - (10 % 3)
+		// score = -10 + (20 / 2 - 1) * 10 - 1
+		// score = -10 + (10 - 1) * 10 - 1
+		// score = -10 + 9 * 10 - 1
+		// score = -10 + 90 - 1
+		// score = 80 - 1 = 79
+		score = -score + (five * globalVar / 2 - one) * score - (score % 3); 
+		print(score);
+	}
+}

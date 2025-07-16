@@ -1,0 +1,72 @@
+// Test program for basic and array operations.
+program NonSetFeaturesTest
+
+const int NULA = 0;
+const int JEDAN = 1;
+const int PET = 5;
+
+// Global variables
+int global_array[];
+char char_array[];
+int a;
+
+{
+    void main()
+        // Local variables
+        int result;
+        int temp;
+    {
+        // === Test 1: Basic Arithmetic and Inc/Dec ===
+        print('T', 1); print('1'); print(':'); print(' ');
+        result = 0;
+        result++; // result = 1
+        result = result + JEDAN; // result = 2
+        result = result * PET; // result = 10
+        result--; // result = 9
+        print(result);  // Expected output: 9
+        print(eol);
+
+        // === Test 2: Integer Array Operations ===
+        print('T', 1); print('2'); print(':'); print(' ');
+        global_array = new int[3];
+        global_array[NULA] = 2;
+        global_array[JEDAN] = 3;
+        global_array[global_array[NULA]] = global_array[1] * 4; // Access niz[2], sets it to 3 * 4 = 12
+        
+        result = global_array[2] / global_array[0]; // result = 12 / 2 = 6
+        print(result); // Expected output: 6
+        print(' ');
+        print(global_array[2]); // Expected output: 12
+        print(eol);
+        
+        // === Test 3: Character Array Operations and ord() ===
+        print('T', 1); print('3'); print(':'); print(' ');
+        char_array = new char[3];
+        char_array[0] = 'a';
+        char_array[JEDAN] = 'b';
+        char_array[PET - 3] = 'c'; // Access char_array[2]
+        
+        print(char_array[1]); // Expected output: b
+        print(' ');
+        print(char_array[JEDAN * 2]); // Expected output: c
+        print(' ');
+        print(ord(char_array[0])); // Expected output: 97
+        print(eol);
+        
+        // === Test 4: Complex Expression with read() ===
+        print('T', 1); print('4'); print(':'); print(' ');
+        a = 1;
+        print('U', 1);print('n',1);print('e',1);print('s',1);print('i',1);print('t',1);print('e',1);print(' ',1);print('b',1);print('r',1);print('o',1);print('j',1);print(':',1);print(' ');
+        read(result); // User input, e.g., 10
+
+        // For input result = 10:
+        // temp = (5 * 1 / 2 - 0) -> 2
+        // temp = -10 + 2 * 10 - (3 % 2 + 3 * 2 - 7)
+        // temp = -10 + 20 - (1 + 6 - 7)
+        // temp = -10 + 20 - 0 -> 10
+        temp = (PET * a / 2 - NULA);
+        result = -result + temp * result - (3 % 2 + 3 * 2 - 7);
+        print(result); // Expected output for input 10 is: 10
+        print(eol);
+    }
+}
