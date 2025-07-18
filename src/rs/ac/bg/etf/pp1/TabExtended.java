@@ -9,6 +9,8 @@ public class TabExtended extends Tab {
 	public static final Struct boolType = new Struct(Struct.Bool);
 	public static final Struct setType = new Struct(Struct.Array, Tab.intType);
 
+	public static Obj lenMeth;
+	
 	public static void init() {
 		// 1. Inicijalizuj osnovnu tabelu simbola (int, char, chr, ord, len...)
 		Tab.init(); 
@@ -17,7 +19,17 @@ public class TabExtended extends Tab {
 		Tab.currentScope.addToLocals(new Obj(Obj.Type, "bool", boolType));
 		Tab.currentScope.addToLocals(new Obj(Obj.Type, "set", setType));
 		
-        // 3. Deklarisi nove predefinisane metode za rad sa skupovima (set)
+		// 3. Declare the new predefined 'len' method
+        // int len(any_array a)
+        lenMeth = insert(Obj.Meth, "len", Tab.intType);
+        openScope();
+        // The parameter type is checked semantically, so we can use a placeholder here.
+        insert(Obj.Var, "a", new Struct(Struct.Array, noType));
+        lenMeth.setLocals(currentScope.getLocals());
+        lenMeth.setLevel(1); // 1 formal parameter
+        closeScope();
+		
+        // 4. Deklarisi nove predefinisane metode za rad sa skupovima (set)
         
         // void add(set s, int e)
         Obj addMeth = insert(Obj.Meth, "add", Tab.noType);

@@ -64,13 +64,23 @@
 	</target>
 	<target name="disasm">
 		<java classname="rs.etf.pp1.mj.runtime.disasm">
-			<arg value="test/noSetTest.obj" />
+			<arg value="test/setTest.obj" />
 			<classpath>
 				<pathelement location="lib/mj-runtime-1.1.jar" />
 			</classpath>
 		</java>
 	</target>
 
+	<target name="debugObj" depends="disasm">
+		<java classname="rs.etf.pp1.mj.runtime.Run" input="input/setTest.mj">
+	        <arg value="test/setTest.obj"/>
+	        <arg value="-debug"/>
+	            <!--            <redirector input="input/input.txt" />-->
+	        <classpath>
+	        	<pathelement location="lib/mj-runtime-1.1.jar"/>
+	    	</classpath>
+		</java>
+	</target>
 	<target name="runObj" depends="disasm">
 		<java classname="rs.etf.pp1.mj.runtime.Run" fork="true">
 			<arg value="test/noSetTest.obj" />

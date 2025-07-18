@@ -31,7 +31,7 @@ public class MJParserTest {
 		
 		Reader br = null;
 		try {
-			File sourceCode = new File("test/noSetTest.mj");
+			File sourceCode = new File("test/setTest.mj");
 			log.info("Compiling source file: " + sourceCode.getAbsolutePath());
 			
 			br = new BufferedReader(new FileReader(sourceCode));
@@ -58,12 +58,14 @@ public class MJParserTest {
 			TabExtended.dump();
 			
 			if(v.passed()){
-				File objFile = new File("test/noSetTest.obj");
+				File objFile = new File("test/setTest.obj");
 				if(objFile.exists()) objFile.delete();
 				
 				CodeGenerator codeGenerator = new CodeGenerator();
 				prog.traverseBottomUp(codeGenerator);
+//				Code.dataSize = Code.dataSize + 10;
 				Code.dataSize = v.nVars;
+//				Code.dataSize += v.nVars;
 				Code.mainPc = codeGenerator.getMainPc();
 				Code.write(new FileOutputStream(objFile));
 				log.info("Parsiranje uspesno zavrseno!");

@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import rs.ac.bg.etf.pp1.ast.*;
+import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.*;
 
@@ -98,7 +99,7 @@ public class SemanticPass extends VisitorAdaptor {
         report_info("Deklarisana konstanta '" + formalConst.getConstName() + "'", formalConst);
         Obj con = TabExtended.insert(Obj.Con, formalConst.getConstName(), currentType);
         
-        // Fix: Attach the created Obj node to the AST node
+        // Attach the created Obj node to the AST node
         formalConst.obj = con;
     }
     
@@ -115,7 +116,7 @@ public class SemanticPass extends VisitorAdaptor {
         report_info("Deklarisana konstanta '" + moreConsts.getConstName() + "'", moreConsts);
         Obj con = TabExtended.insert(Obj.Con, moreConsts.getConstName(), currentType);
         
-        // Fix: Attach the created Obj node to the AST node
+        // Attach the created Obj node to the AST node
         moreConsts.obj = con;
     }
     
@@ -127,6 +128,7 @@ public class SemanticPass extends VisitorAdaptor {
         }
         report_info("Deklarisana promenljiva '" + varName + "'", info);
         TabExtended.insert(Obj.Var, varName, currentType);
+        //var.setAdr(Code.dataSize++);
         varDeclCount++;
     }
 
@@ -143,6 +145,7 @@ public class SemanticPass extends VisitorAdaptor {
             report_info("Deklarisan niz '" + arrayName + "'", info);
         }
         TabExtended.insert(Obj.Var, arrayName, arrayType);
+//        arr.setAdr(Code.dataSize++);
     }
 
     public void visit(VarDeclVar varDecl) { declareVar(varDecl.getVarName(), varDecl); varDeclCount++; }
@@ -386,6 +389,12 @@ public class SemanticPass extends VisitorAdaptor {
         }
     }
 
+    // =================================================================
+    // Visitors for function calls
+    // =================================================================
+    
+    // Handles calls like funcCall();
+    
     public void visit(DesignatorStatementCall call) {
         Obj func = call.getDesignator().obj;
         if (func.getKind() != Obj.Meth) {
@@ -395,6 +404,8 @@ public class SemanticPass extends VisitorAdaptor {
         checkActualParams(func, call.getActPars(), call);
     }
     
+    // Handles calls like a = funcCall();
+    
     public void visit(FactorFuncCall call) {
         Obj func = call.getDesignator().obj;
         if (func.getKind() != Obj.Meth) {
@@ -403,10 +414,54 @@ public class SemanticPass extends VisitorAdaptor {
             return;
         }
         if (func.getType() == TabExtended.noType) {
-             report_error("Greska: Metoda '" + func.getName() + "' je tipa void i ne moze se koristiti u izrazu.", call);
-             call.struct = TabExtended.noType;
-             return;
+        	report_error("Greska: Metoda '" + func.getName() + "' je tipa void i ne moze se koristiti u izrazu.", call);
+        	call.struct = TabExtended.noType;
+        	return;
         }
+        
+
+        // SPECIAL CASE for add(set, int)
+        if (func.getName().equals("add")) {
+            List<Struct> actuals = collectActualParams(call.getActPars());
+            if (actuals.size() != 2) {
+                report_error("Greska: Metoda 'add' ocekuje 2 argumenta.", call);
+            } else if (actuals.get(0) != TabExtended.setType || actuals.get(1) != Tab.intType) {
+                report_error("Greska: Metoda 'add' mora biti pozvana sa (set, int).", call);
+            }
+            return; // Skip generic check
+        }
+
+        // SPECIAL CASE for addAll(set, int[])
+        if (func.getName().equals("addAll")) {
+            List<Struct> actuals = collectActualParams(call.getActPars());
+            Struct intArrayType = new Struct(Struct.Array, Tab.intType);
+            if (actuals.size() != 2) {
+                report_error("Greska: Metoda 'addAll' ocekuje 2 argumenta.", call);
+            } else if (actuals.get(0) != TabExtended.setType || !actuals.get(1).equals(intArrayType)) {
+                report_error("Greska: Metoda 'addAll' mora biti pozvana sa (set, int[]).", call);
+            }
+            return; // Skip generic check
+        }
+        
+        // <<< SPECIAL CASE FOR len() >>>
+        if (func == TabExtended.lenMeth) {
+            List<Struct> actuals = collectActualParams(call.getActPars());
+            if (actuals.size() != 1) {
+                report_error("Greska: Funkcija 'len' ocekuje tacno 1 argument.", call);
+                call.struct = TabExtended.noType;
+                return;
+            }
+            Struct argType = actuals.get(0);
+            if (argType.getKind() != Struct.Array) {
+                report_error("Greska: Argument za funkciju 'len' mora biti niz.", call);
+                call.struct = TabExtended.noType;
+                return;
+            }
+            // Call is valid, return type is int.
+            call.struct = TabExtended.intType;
+            return; // Skip generic check
+        }
+        
         checkActualParams(func, call.getActPars(), call);
         call.struct = func.getType();
     }
