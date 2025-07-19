@@ -40,14 +40,14 @@ public class TabExtended extends Tab {
         addMeth.setLevel(2); // Broj formalnih parametara
         closeScope();
 
-        // void addAll(set s, int[] arr)
         Struct intArrayType = new Struct(Struct.Array, Tab.intType);
         Obj addAllMeth = insert(Obj.Meth, "addAll", Tab.noType);
         openScope();
         insert(Obj.Var, "s", setType);
         insert(Obj.Var, "arr", intArrayType);
+        insert(Obj.Var, "isSourceSet", Tab.intType); // The "type tag" parameter
         addAllMeth.setLocals(currentScope.getLocals());
-        addAllMeth.setLevel(2); // Broj formalnih parametara
+        addAllMeth.setLevel(3); // Now expects 3 formal parameters
         closeScope();
 	}
 

@@ -35,106 +35,153 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 	
 	private void generateAddMethod() {
-	    Obj addMeth = Tab.find("add");
+		Obj addMeth = Tab.find("add");
 	    addMeth.setAdr(Code.pc);
 	    
-	    // Method signature: void add(set s, int element)
-	    // enter 2 params, 3 total vars (1 extra local for loop counter `i`)
 	    Code.put(Code.enter); Code.put(2); Code.put(3);
 	    int i_local_idx = 2;
 
-	    // 1. Check if the set is full: if (s[0] >= capacity) return;
-	    Code.put(Code.load_n + 0); // stack: s
-	    Code.put(Code.dup);        // stack: s, s
-	    Code.put(Code.arraylength); // stack: s, capacity+1
-	    Code.loadConst(1);         // stack: s, capacity+1, 1
-	    Code.put(Code.sub);        // stack: s, capacity
-	    Code.put(Code.dup_x1);     // stack: capacity, s, capacity
-	    Code.put(Code.pop);        // stack: capacity, s
-	    Code.put(Code.dup_x1);     // stack: s, capacity, s
-	    Code.loadConst(0);         // stack: s, capacity, s, 0
-	    Code.put(Code.aload);      // stack: s, capacity, size=s[0]
-	    // Condition: continue if size < capacity. Jump if size >= capacity.
-	    Code.putFalseJump(Code.lt, 0); int notFullPatch = Code.pc - 2;
-	    Code.put(Code.exit); Code.put(Code.return_); // If full, exit
-	    Code.fixup(notFullPatch);
-	    // stack: s
-
-	    // 2. Check for duplicates: for (i = 1; i <= s[0]; i++)
-	    Code.loadConst(1); Code.put(Code.store_n + i_local_idx); // i = 1
-	    int dupLoopStart = Code.pc;
-	    Code.put(Code.load_n + i_local_idx); // stack: s, i
-	    Code.put(Code.load_n + 0);           // stack: s, i, s
-	    Code.loadConst(0);                   // stack: s, i, s, 0
-	    Code.put(Code.aload);                // stack: s, i, s[0] (size)
-	    Code.putFalseJump(Code.le, 0); int dupLoopEnd = Code.pc - 2; // Jump if i > size
+	    // <<< SECTION 1: CORRECTED FULLNESS CHECK >>>
+	    // We will check if size >= capacity. If so, we exit.
 	    
-	    // Body: if (s[i] == element) return;
-	    Code.put(Code.load_n + 0); Code.put(Code.load_n + i_local_idx); Code.put(Code.aload); // stack: s, s[i]
-	    Code.put(Code.load_n + 1); // stack: s, s[i], element
-	    Code.putFalseJump(Code.ne, 0); int noDuplicatePatch = Code.pc - 2;
-	    Code.put(Code.exit); Code.put(Code.return_); // If duplicate found, exit
+	    // Push s[0] (current size)
+	    Code.put(Code.load_n + 0); 
+	    Code.loadConst(0);
+	    Code.put(Code.aload);
+	    
+	    // Push capacity (arraylength - 1)
+	    Code.put(Code.load_n + 0);
+	    Code.put(Code.arraylength);
+	    Code.loadConst(1);
+	    Code.put(Code.sub);
+	    
+	    // Stack is now: size, capacity
+	    // Jump to exit if size >= capacity.
+	    // The inverse of "greater or equal" is "less than".
+	    Code.putFalseJump(Code.ge, 0); int canAddPatch = Code.pc - 2;
+	    // If the condition is met (set is full), fall through to exit.
+	    Code.put(Code.exit); Code.put(Code.return_);
+	    Code.fixup(canAddPatch);
+	    // If we get here, the set is not full and the stack is clean.
+
+	    // 2. Check for duplicates (This logic is now correct)
+	    Code.loadConst(1); Code.put(Code.store_n + i_local_idx);
+	    int dupLoopStart = Code.pc;
+	    
+	    Code.put(Code.load_n + i_local_idx);
+	    Code.put(Code.load_n + 0);
+	    Code.loadConst(0);
+	    Code.put(Code.aload);
+	    Code.putFalseJump(Code.le, 0); int dupLoopEnd = Code.pc - 2;
+	    
+	    Code.put(Code.load_n + 0);
+	    Code.put(Code.load_n + i_local_idx);
+	    Code.put(Code.aload);
+	    Code.put(Code.load_n + 1);
+	    Code.putFalseJump(Code.eq, 0); int noDuplicatePatch = Code.pc - 2;
+	    Code.put(Code.exit); Code.put(Code.return_);
 	    Code.fixup(noDuplicatePatch);
 	    
-	    // i++
 	    Code.put(Code.inc); Code.put(i_local_idx); Code.put(1);
 	    Code.putJump(dupLoopStart);
 	    Code.fixup(dupLoopEnd);
-	    // stack: s
 
-	    // 3. Add the element and increment size.
-	    // s[s[0] + 1] = element;
-	    Code.put(Code.load_n + 0); // s
-	    Code.put(Code.dup);        // s, s
-	    Code.loadConst(0);         // s, s, 0
-	    Code.put(Code.aload);      // s, s, s[0] (size)
-	    Code.loadConst(1);         // s, s, size, 1
-	    Code.put(Code.add);        // s, s, index_to_add=size+1
-	    Code.put(Code.load_n + 1); // s, s, index_to_add, element
-	    Code.put(Code.astore);     // Element is stored. stack: s
+	    // 3. Add element and increment size (This logic is now correct)
+	    Code.put(Code.load_n + 0);
+	    Code.put(Code.dup);
+	    Code.loadConst(0);
+	    Code.put(Code.aload);
+	    Code.loadConst(1);
+	    Code.put(Code.add);
+	    Code.put(Code.load_n + 1);
+	    Code.put(Code.astore);
 	    
-	    // s[0]++;
-	    Code.put(Code.load_n + 0);    // s
-	    Code.loadConst(0);          // s, 0 (index)
-	    Code.put(Code.dup2);        // s, 0, s, 0
-	    Code.put(Code.aload);       // s, 0, current_size
-	    Code.loadConst(1);          // s, 0, current_size, 1
-	    Code.put(Code.add);         // s, 0, new_size
-	    Code.put(Code.astore);      // s[0] = new_size.
+	    Code.put(Code.load_n + 0);
+	    Code.loadConst(0);
+	    Code.put(Code.dup2);
+	    Code.put(Code.aload);
+	    Code.loadConst(1);
+	    Code.put(Code.add);
+	    Code.put(Code.astore);
 	    
 	    Code.put(Code.exit);
 	    Code.put(Code.return_);
 	}
-
+	
 	private void generateAddAllMethod() {
-	    Obj addAllMeth = Tab.find("addAll");
-	    addAllMeth.setAdr(Code.pc);
+	    Obj meth = Tab.find("addAll");
+	    meth.setAdr(Code.pc);
 	    
-	    // enter 2 params, 3 total vars (1 for loop counter `i`)
-	    Code.put(Code.enter); Code.put(2); Code.put(3);
-	    int i_local_idx = 2;
+	    // enter: 3 params (dest_set, src, isSourceSet), 1 local var (i)
+	    Code.put(Code.enter); Code.put(3); Code.put(4);
+	    int i_local_idx = 3; // `i` is now the 4th variable (index 3)
 	    
-	    // for (i = 0; i < arr.length; i++)
-	    Code.loadConst(0); Code.put(Code.store_n + i_local_idx);
+	    int endOfMethodLabel = 0; // To hold the address for the final jump
+
+	    // --- Dispatch based on the 'isSourceSet' tag ---
+	    Code.put(Code.load_n + 2); // Load the isSourceSet tag (param 2)
+	    Code.loadConst(0);
+	    Code.putFalseJump(Code.ne, 0); int isArrayBranch = Code.pc - 2;
+
+	    // --- Branch 1: Source is a Set (tag == 1) ---
+	    {
+	        // Set-specific loop: for (i = 1; i <= src_set[0]; i++)
+	        Code.loadConst(1); 
+	        Code.put(Code.store_n + i_local_idx);
+	        
+	        int loopStart = Code.pc;
+	        Code.put(Code.load_n + i_local_idx); 
+	        Code.put(Code.load_n + 1); // param 1 is the source set
+	        Code.loadConst(0);                   
+	        Code.put(Code.aload); // get size from src_set[0]
+	        Code.putFalseJump(Code.le, 0); int loopEnd = Code.pc - 2; 
+	        
+	        // Body: call add(dest_set, src_set[i]);
+	        Code.put(Code.load_n + 0); 
+	        Code.put(Code.load_n + 1); 
+	        Code.put(Code.load_n + i_local_idx); 
+	        Code.put(Code.aload); 
+	        
+	        Obj addMeth = Tab.find("add");
+	        Code.put(Code.call);
+	        Code.put2(addMeth.getAdr() - Code.pc + 1);
+	        
+	        Code.put(Code.inc); Code.put(i_local_idx); Code.put(1);
+	        Code.putJump(loopStart);
+	        Code.fixup(loopEnd);
+	        Code.putJump(0); endOfMethodLabel = Code.pc - 2; // Jump to the end
+	    }
+
+	    // --- Branch 2: Source is an Array (tag == 0) ---
+	    Code.fixup(isArrayBranch);
+	    {
+	        // Standard loop: for (i = 0; i < src_array.length; i++)
+	        Code.loadConst(0); 
+	        Code.put(Code.store_n + i_local_idx);
+	        
+	        int loopStart = Code.pc;
+	        Code.put(Code.load_n + i_local_idx); 
+	        Code.put(Code.load_n + 1); // param 1 is the source array
+	        Code.put(Code.arraylength);
+	        Code.putFalseJump(Code.lt, 0); int loopEnd = Code.pc - 2;
+	        
+	        // Body: call add(dest_set, src_array[i]);
+	        Code.put(Code.load_n + 0);
+	        Code.put(Code.load_n + 1);
+	        Code.put(Code.load_n + i_local_idx);
+	        Code.put(Code.aload);
+	        
+	        Obj addMeth = Tab.find("add");
+	        Code.put(Code.call);
+	        Code.put2(addMeth.getAdr() - Code.pc + 1);
+	        
+	        Code.put(Code.inc); Code.put(i_local_idx); Code.put(1);
+	        Code.putJump(loopStart);
+	        Code.fixup(loopEnd);
+	    }
 	    
-	    int loopStart = Code.pc;
-	    Code.put(Code.load_n + i_local_idx); Code.put(Code.load_n + 1); Code.put(Code.arraylength);
-	    Code.putFalseJump(Code.lt, 0); int loopEnd = Code.pc - 2;
-	    
-	    // Body: call add(s, arr[i]);
-	    Code.put(Code.load_n + 0); // Param 1 for add(): dest_set `s`
-	    Code.put(Code.load_n + 1); // Load src_array `arr`
-	    Code.put(Code.load_n + i_local_idx);    // Load `i`
-	    Code.put(Code.aload);      // Param 2 for add(): element `arr[i]`
-	    
-	    Obj addMeth = Tab.find("add");
-	    Code.put(Code.call);
-	    Code.put2(addMeth.getAdr() - Code.pc);
-	    
-	    Code.put(Code.inc); Code.put(i_local_idx); Code.put(1); // i++
-	    Code.putJump(loopStart);
-	    Code.fixup(loopEnd);
-	    
+	    // Both branches arrive here
+	    if(endOfMethodLabel != 0) Code.fixup(endOfMethodLabel);
 	    Code.put(Code.exit);
 	    Code.put(Code.return_);
 	}
@@ -214,94 +261,62 @@ public class CodeGenerator extends VisitorAdaptor {
 				Code.put(Code.print);
 			}
 		} else {
-			if (type == TabExtended.setType) {
-				// Printing a Set (This logic appears correct in your disassembly)
-				Code.put(Code.dup);
-				Code.loadConst(1); 
-				
-				int loopStart = Code.pc;
-				Code.put(Code.dup_x1); Code.put(Code.dup_x1); Code.put(Code.pop);
-				Code.loadConst(0); Code.put(Code.aload);
-				Code.putFalseJump(Code.le, 0); int loopEnd = Code.pc - 2;
+			// Case 2: Printing an Array or a Set
+	        boolean isSet = (type == TabExtended.setType);
+	        int loopEnd;
 
-				Code.put(Code.dup_x1); Code.put(Code.aload);
-				Code.loadConst(5); Code.put(Code.print);
+	        if (isSet) {
+	            Code.loadConst(1); // For sets, start counter i at 1
+	        } else {
+	            Code.loadConst(0); // For arrays, start counter i at 0
+	        }
 
-				Code.loadConst(' '); Code.loadConst(1); Code.put(Code.bprint);
+	        int loopStart = Code.pc;
+	        // stack at loop start: addr, i
 
-				Code.loadConst(1); Code.put(Code.add);
-				Code.putJump(loopStart);
+	        // --- Loop Condition using the robust pattern for BOTH cases ---
+	        Code.put(Code.dup2);      // Duplicate state for the check (addr, i, addr, i)
+	        Code.put(Code.dup_x1);    // Manipulate the copy
+	        Code.put(Code.pop);       // The copy is now (i, addr)
 
-				Code.fixup(loopEnd);
-				Code.put(Code.pop); Code.put(Code.pop);
+	        if (isSet) {
+	            Code.loadConst(0);
+	            Code.put(Code.aload);     // Get size from set[0] (consumes copy of addr)
+	            Code.putFalseJump(Code.le, 0); 
+	            loopEnd = Code.pc - 2;    // Jumps if i > size
+	        } else {
+	            Code.put(Code.arraylength); // Get array length (consumes copy of addr)
+	            Code.putFalseJump(Code.lt, 0); 
+	            loopEnd = Code.pc - 2;    // Jumps if i >= len
+	        }
+	        // stack after check (if continuing): addr, i
 
-			} else {
-				// Case 2: Printing an Array or a Set
-		        // The array address is on the stack.
-
-		        boolean isSet = (type == TabExtended.setType);
-		        int loopEnd;
-
-		        if (isSet) {
-		            Code.loadConst(1); // For sets, start counter i at 1
-		        } else {
-		            Code.loadConst(0); // For arrays, start counter i at 0
-		        }
-
-		        int loopStart = Code.pc;
-		        // stack at loop start: arr_addr, i
-
-		        // --- Loop Condition ---
-		        // To check "i < size" without losing our state, we first duplicate it.
-		        Code.put(Code.dup2); // stack: arr_addr, i, arr_addr, i
-	        	Code.put(Code.dup_x1);	  // stack: arr_addr, i, i, arr_addr, i
-	        	
-		        // Now we use the copies to get the size/length for comparison.
-		        if (isSet) {
-		            Code.put(Code.pop);       // stack: arr_addr, i, arr_addr
-		            Code.loadConst(0);      // stack: arr_addr, i, arr_addr, 0
-		            Code.put(Code.aload);     // stack: arr_addr, i, size
-		            Code.putFalseJump(Code.lt, 0); 
-		            loopEnd = Code.pc - 2;    // Jump if NOT (i < size)
-		        } else {
-
-		            Code.put(Code.pop);       // stack: arr_addr, i, arr_addr
-		            Code.put(Code.arraylength); // stack: arr_addr, i, len
-		            Code.putFalseJump(Code.lt, 0); 
-		            loopEnd = Code.pc - 2;    // Jump if NOT (i < len)
-		        }
-		        // If we continue, the jump pops the copies, leaving the original state.
-		        // stack after check: arr_addr, i
-
-		        // --- Loop Body ---
-		        // We still have our original state, so we duplicate it again for use.
-		        Code.put(Code.dup2);      // stack: arr_addr, i, arr_addr, i
-		        
-		        if (type.getElemType() == Tab.charType) {
-		            Code.put(Code.baload);
-		            Code.loadConst(1);
-		            Code.put(Code.bprint);
-		        } else {
-		            Code.put(Code.aload);
-		            Code.loadConst(5);
-		            Code.put(Code.print);
-		        }
-		        // stack after print: arr_addr, i
-		        
-		        Code.loadConst(' '); 
-		        Code.loadConst(1); 
-		        Code.put(Code.bprint);
-		        
-		        // i++
-		        Code.loadConst(1);
-		        Code.put(Code.add);
-		        Code.putJump(loopStart);
-		        
-		        // --- Cleanup ---
-		        Code.fixup(loopEnd);
-		        Code.put(Code.pop); // pop final i
-		        Code.put(Code.pop); // pop arr_addr
-			}
+	        // --- Loop Body ---
+	        Code.put(Code.dup2);      // Duplicate state for use in the body
+	        
+	        if (type.getElemType() == Tab.charType) {
+	            Code.put(Code.baload);
+	            Code.loadConst(1);
+	            Code.put(Code.bprint);
+	        } else {
+	            Code.put(Code.aload);
+	            Code.loadConst(5);
+	            Code.put(Code.print);
+	        }
+	        
+	        Code.loadConst(' '); 
+	        Code.loadConst(1); 
+	        Code.put(Code.bprint);
+	        
+	        // i++
+	        Code.loadConst(1);
+	        Code.put(Code.add);
+	        Code.putJump(loopStart);
+	        
+	        // --- Cleanup ---
+	        Code.fixup(loopEnd);
+	        Code.put(Code.pop); // pop final i
+	        Code.put(Code.pop); // pop addr
 		}
 	}
 
@@ -357,9 +372,32 @@ public class CodeGenerator extends VisitorAdaptor {
 
         Obj functionObj = call.getDesignator().obj;
         
+        if (functionObj.getName().equals("addAll")) {
+        	// Arguments (dest_set, src_array) are already on the stack.
+            
+            // Get the type of the second argument to determine the tag.
+            ActPars actPars = call.getActPars();
+            MoreActPars moreActPars = ((Actuals)actPars).getMoreActPars();
+            Expr secondArgExpr = ((MoreActuals)moreActPars).getExpr();
+            Struct secondArgType = secondArgExpr.struct;
+
+            // Push the "type tag" as the third argument.
+            if (secondArgType == TabExtended.setType) {
+                Code.loadConst(1); // 1 for true (is a Set)
+            } else {
+                Code.loadConst(0); // 0 for false (is a regular Array)
+            }
+
+            // Now call the single, unified addAll subroutine.
+            int offset = functionObj.getAdr() - Code.pc;
+            Code.put(Code.call);
+            Code.put2(offset);
+            
+        }
+        
         // For predefined methods like add/addAll, we generate a call to the subroutine.
         // We check if the address is not 0, which it won't be for our generated subroutines.
-        {
+        else {
             int offset = functionObj.getAdr() - Code.pc;
             Code.put(Code.call);
             Code.put2(offset);
@@ -545,6 +583,60 @@ public class CodeGenerator extends VisitorAdaptor {
 
 	public void visit(MoreConstValsExist moreConstDeclr) {
 		moreConstDeclr.obj.setAdr(getConstVal(moreConstDeclr.getConstVals()));
+	}
+	
+	// =================================================================
+	// ## Expressions
+	// =================================================================
+	
+	@Override
+	public void visit(ExprUnion expr) {
+		// This is called for the expression `s2 union s3`.
+	    // The addresses of s2 and s3 are on the stack from visiting the children.
+	    // Stack: ..., s2_addr, s3_addr
+
+	    // --- 1. Calculate required capacity (s2[0] + s3[0]) ---
+	    Code.put(Code.dup2);        // Stack: s2, s3, s2, s3
+	    Code.loadConst(0);          // Stack: s2, s3, s2, s3, 0
+	    Code.put(Code.aload);       // Pops s3, 0; Pushes s3[0]. Stack: s2, s3, s2, size(s3)
+	    Code.put(Code.dup_x1);      // Stack: s2, s3, size(s3), s2, size(s3)
+	    Code.put(Code.pop);         // Stack: s2, s3, size(s3), s2
+	    Code.loadConst(0);          // Stack: s2, s3, size(s3), s2, 0
+	    Code.put(Code.aload);       // Pops s2, 0; Pushes s2[0]. Stack: s2, s3, size(s3), size(s2)
+	    Code.put(Code.add);         // Stack: s2, s3, new_capacity
+
+	    // --- 2. Create the new temporary set ---
+	    Code.loadConst(1); 
+	    Code.put(Code.add);         // Stack: s2, s3, new_capacity + 1
+	    Code.put(Code.newarray); 
+	    Code.put(1);                // Stack: s2, s3, temp_set_addr
+	    Code.put(Code.dup); 
+	    Code.loadConst(0); 
+	    Code.loadConst(0); 
+	    Code.put(Code.astore);      // Initialize temp_set[0] = 0
+	    // Stack: s2_addr, s3_addr, temp_set_addr
+
+	    // --- 3. Populate the temporary set using addAll ---
+	    // a) Call addAllFromSet(temp_set, s2)
+	    Code.put(Code.dup_x2);      // temp, s2, s3, temp
+	    Code.put(Code.dup_x2);      // temp, temp, s2, s3, temp
+	    Code.put(Code.pop);         // temp, temp, s2, s3
+	    Code.put(Code.dup_x2);		// temp, s3, temp, s2, s3
+	    Code.put(Code.pop);         // temp, s3, temp (dest), s2 (src) -- ready for call
+	    
+	    Obj addAllSetMeth = Tab.find("addAllFromSet");
+	    Code.put(Code.call);
+	    Code.put2(addAllSetMeth.getAdr() - Code.pc + 2);
+	    // After the call, arguments are consumed. Stack: temp_set_addr, s3_addr
+
+	    // b) Call addAllFromSet(temp_set, s3)
+	    Code.put(Code.dup_x1);
+	    Code.put(Code.pop);         // s3_addr, temp_set_addr (swapped and ready for call)
+
+	    Code.put(Code.call);
+	    Code.put2(addAllSetMeth.getAdr() - Code.pc + 2);
+	    // After the call, arguments are consumed. The stack is left with the final result.
+	    // Stack: ..., temp_set_addr
 	}
 	
 	// --- Loading constants when used as factors in expressions ---

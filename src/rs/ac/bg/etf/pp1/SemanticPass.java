@@ -396,11 +396,45 @@ public class SemanticPass extends VisitorAdaptor {
     // Handles calls like funcCall();
     
     public void visit(DesignatorStatementCall call) {
-        Obj func = call.getDesignator().obj;
+    	Obj func = call.getDesignator().obj;
         if (func.getKind() != Obj.Meth) {
             report_error("Greska: '" + func.getName() + "' nije metoda.", call);
             return;
         }
+
+        // <<< FIX 1: Checks for void methods like add/addAll belong here >>>
+
+        // SPECIAL CASE for add(set, int)
+        if (func.getName().equals("add")) {
+            List<Struct> actuals = collectActualParams(call.getActPars());
+            if (actuals.size() != 2) {
+                report_error("Greska: Metoda 'add' ocekuje 2 argumenta.", call);
+            } else if (actuals.get(0) != TabExtended.setType || actuals.get(1) != Tab.intType) {
+                report_error("Greska: Metoda 'add' mora biti pozvana sa (set, int).", call);
+            }
+            return; // Skip generic check
+        }
+
+        // SPECIAL CASE for addAll(set, array)
+        if (func.getName().equals("addAll")) {
+            List<Struct> actuals = collectActualParams(call.getActPars());
+            if (actuals.size() != 2) {
+                report_error("Greska: Metoda 'addAll' ocekuje 2 argumenta.", call);
+            } else {
+                Struct firstArg = actuals.get(0);
+                Struct secondArg = actuals.get(1);
+
+                // <<< FIX 2: Correctly check for (set, array_of_int) >>>
+                boolean isSecondArgIntArray = secondArg.getKind() == Struct.Array && secondArg.getElemType() == Tab.intType;
+
+                if (firstArg != TabExtended.setType || !isSecondArgIntArray) {
+                    report_error("Greska: Metoda 'addAll' mora biti pozvana sa (set, int[] ili set).", call);
+                }
+            }
+            return; // Skip generic check
+        }
+        
+        // Generic check for other methods
         checkActualParams(func, call.getActPars(), call);
     }
     
@@ -417,30 +451,6 @@ public class SemanticPass extends VisitorAdaptor {
         	report_error("Greska: Metoda '" + func.getName() + "' je tipa void i ne moze se koristiti u izrazu.", call);
         	call.struct = TabExtended.noType;
         	return;
-        }
-        
-
-        // SPECIAL CASE for add(set, int)
-        if (func.getName().equals("add")) {
-            List<Struct> actuals = collectActualParams(call.getActPars());
-            if (actuals.size() != 2) {
-                report_error("Greska: Metoda 'add' ocekuje 2 argumenta.", call);
-            } else if (actuals.get(0) != TabExtended.setType || actuals.get(1) != Tab.intType) {
-                report_error("Greska: Metoda 'add' mora biti pozvana sa (set, int).", call);
-            }
-            return; // Skip generic check
-        }
-
-        // SPECIAL CASE for addAll(set, int[])
-        if (func.getName().equals("addAll")) {
-            List<Struct> actuals = collectActualParams(call.getActPars());
-            Struct intArrayType = new Struct(Struct.Array, Tab.intType);
-            if (actuals.size() != 2) {
-                report_error("Greska: Metoda 'addAll' ocekuje 2 argumenta.", call);
-            } else if (actuals.get(0) != TabExtended.setType || !actuals.get(1).equals(intArrayType)) {
-                report_error("Greska: Metoda 'addAll' mora biti pozvana sa (set, int[]).", call);
-            }
-            return; // Skip generic check
         }
         
         // <<< SPECIAL CASE FOR len() >>>

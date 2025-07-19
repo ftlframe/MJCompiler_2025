@@ -51,13 +51,13 @@ set s1, s2, s3;
 		bodovi = -bodovi + (pet * a / 2 - nula) * bodovi - (3 % 2 + 3 * 2 - 7); 
 		print(bodovi); //bodovi
 		
-		//niz[0] = 1; niz[1] = 2; niz[2] = 3;
-		//s1 = new set[5]; s2 = new set[5]; s3 = new set[10];
-		//addAll(s1, niz);
-		//add(s2, 3); add(s2, 4); add(s2, 5);
+		niz[0] = 1; niz[1] = 2; niz[2] = 3;
+		s1 = new set[5]; s2 = new set[5]; s3 = new set[10];
+		addAll(s1, niz);
+		add(s2, 3); add(s2, 4); add(s2, 5);
 		//s3 = s1 union s2;
-		//print(s3); //1 2 3 4 5
-		//print(eol);
+		print(s1); //1 2 3 4 5
+		print(eol);
 		
 		//niz[0] = 5; niz[1] = 5; niz[2] = 10;
 		//s1 = new set[5]; s2 = new set[5]; s3 = new set[10];

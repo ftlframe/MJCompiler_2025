@@ -1,0 +1,57 @@
+program TestArrayAndSetPrint
+
+// Global variables
+int my_int_array[];
+char my_char_array[];
+set my_set;
+
+{
+    void main() {
+    
+        // === Test 1: Integer Array Printing ===
+        my_int_array = new int[5];
+        my_int_array[0] = 101;
+        my_int_array[1] = 202;
+        my_int_array[2] = 303;
+        my_int_array[3] = 404;
+        my_int_array[4] = 505;
+
+        print('I'); print('n'); print('t'); print(' '); print('a'); print('r'); print('r'); print('a'); print('y'); print(':'); print(' ');
+        print(my_int_array);
+        print(eol);
+        
+        // === Test 2: Character Array Printing ===
+        my_char_array = new char[7];
+        my_char_array[0] = 'T';
+        my_char_array[1] = 'e';
+        my_char_array[2] = 's';
+        my_char_array[3] = 't';
+        my_char_array[4] = 'i';
+        my_char_array[5] = 'n';
+        my_char_array[6] = 'g';
+
+        print('C'); print('h'); print('a'); print('r'); print(' '); print('a'); print('r'); print('r'); print('a'); print('y'); print(':'); print(' ');
+        print(my_char_array);
+        print(eol);
+
+        // === Test 3: Set Printing ===
+        // Note: This uses the capacity-based set implementation.
+		my_set = new set[7];
+        
+        // --- Test 1: Verify total allocated length ---
+        // For a capacity of 7, the actual length should be 8 (7 for elements + 1 for the counter).
+        print('T'); print('o'); print('t'); print('a'); print('l'); print(' '); print('l'); print('e'); print('n'); print('g'); print('t'); print('h'); print(':'); print(' ');
+        print(len(my_set)); // Expected output: 8
+        print(eol);
+        
+        // --- Test 2: Verify initial element counter ---
+        // The counter at index 0 should be initialized to 0.
+        print('I'); print('n'); print('i'); print('t'); print('i'); print('a'); print('l'); print(' '); print('s'); print('i'); print('z'); print('e'); print(':'); print(' ');
+        print(my_set[0]); // Expected output: 0
+        print(eol);
+		
+		print('S'); print('e'); print('t'); print(':'); print(' ');
+		print(my_set);
+		print(eol);
+    }
+}

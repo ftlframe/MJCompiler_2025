@@ -1,21 +1,4 @@
-/README.txt
-/log4j.xml
-/mjlexer.lex
-/mjparser.cup
-/mjparser_astbuild.cup
-/new 1.txt
-/noSetTest.mj
-/noSetTest.obj
-/printArrSet.mj
-/printArrSet.obj
-/program.mj
-/program.obj
 /rs/
-/setTest.mj
 /setTest.obj
-/test301.mj
-/test301.obj
-/test301_2025.mj
-/test301_2025.obj
-/test302.mj
-/test302.obj
+/unionTest.mj
+/unionTest.obj

@@ -83,8 +83,8 @@
 	</target>
 	<target name="runObj" depends="disasm">
 		<java classname="rs.etf.pp1.mj.runtime.Run" fork="true">
-			<arg value="test/noSetTest.obj" />
-			<redirector input="test/noSetTest.mj" />
+			<arg value="test/setTest.obj" />
+			<redirector input="test/setTest.mj" />
 			<classpath>
 				<pathelement location="lib/mj-runtime-1.1.jar" />
 			</classpath>
