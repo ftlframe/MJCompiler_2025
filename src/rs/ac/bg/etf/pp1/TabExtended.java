@@ -49,6 +49,16 @@ public class TabExtended extends Tab {
         addAllMeth.setLocals(currentScope.getLocals());
         addAllMeth.setLevel(3); // Now expects 3 formal parameters
         closeScope();
+        
+        
+        // set union(set s1, set s2)
+        Obj unionMeth = insert(Obj.Meth, "union", setType); // Name is "union", returns a `set`
+        openScope();
+        insert(Obj.Var, "s1", setType);
+        insert(Obj.Var, "s2", setType);
+        unionMeth.setLocals(currentScope.getLocals());
+        unionMeth.setLevel(2); // 2 formal parameters
+        closeScope();
 	}
 
 	public static void dump() {

@@ -13,7 +13,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	
 	private boolean builtInFunctionsGenerated = false;
 	private int mainPc;
-
+	private Obj currentMethod = null;
 	public int getMainPc() {
 		return mainPc;
 	}
@@ -32,6 +32,56 @@ public class CodeGenerator extends VisitorAdaptor {
 			return "true".equalsIgnoreCase(((ConstBool) node).getBoolVal()) ? 1 : 0;
 		}
 		return -1; // Should not happen with a valid AST
+	}
+	
+	private void generateUnionMethod() {
+		Obj unionMeth = Tab.find("union");
+	    unionMeth.setAdr(Code.pc);
+	    
+	    // enter: 2 params (s2, s3), 1 extra local for the temp_set address
+	    Code.put(Code.enter); Code.put(2); Code.put(3);
+	    int temp_set_slot = 2;
+	    
+	    // --- 1. Calculate capacity and create the temporary set ---
+	    Code.put(Code.load_n + 0); // push s2_addr
+	    Code.put(Code.load_n + 1); // push s3_addr
+	    
+	    Code.put(Code.dup2); Code.loadConst(0); Code.put(Code.aload);
+	    Code.put(Code.dup_x1); Code.put(Code.pop); Code.put(Code.dup_x2); Code.put(Code.pop);
+	    Code.put(Code.dup_x1); Code.put(Code.pop); Code.loadConst(0); Code.put(Code.aload);
+	    Code.put(Code.add); // Stack: new_capacity
+	    
+	    Code.loadConst(1); Code.put(Code.add);
+	    Code.put(Code.newarray); Code.put(1);
+	    Code.put(Code.dup); Code.loadConst(0); Code.loadConst(0); Code.put(Code.astore);
+	    
+	    Code.put(Code.store_n + temp_set_slot); // Save the new set's address
+	    Code.put(Code.pop);
+	    Code.put(Code.pop);
+	    // Stack is now clean.
+
+	    // --- 2. Populate the temporary set ---
+	    Obj addAllMeth = Tab.find("addAll");
+
+	    // a) Call addAll(temp_set, s2, 1)
+	    Code.put(Code.load_n + temp_set_slot); // push temp_set_addr (dest)
+	    Code.put(Code.load_n + 0);             // push s2_addr (src)
+	    Code.loadConst(1);                   // Push the type tag (1 for set)
+	    Code.put(Code.call);
+	    Code.put2(addAllMeth.getAdr() - Code.pc + 1);
+	    
+	    // b) Call addAll(temp_set, s3, 1)
+	    Code.put(Code.load_n + temp_set_slot); // push temp_set_addr (dest)
+	    Code.put(Code.load_n + 1);             // push s3_addr (src)
+	    Code.loadConst(1);                   // Push the type tag (1 for set)
+	    Code.put(Code.call);
+	    Code.put2(addAllMeth.getAdr() - Code.pc + 1);
+	    
+	    // --- 3. Prepare the return value ---
+	    Code.put(Code.load_n + temp_set_slot); 
+	    
+	    Code.put(Code.exit);
+	    Code.put(Code.return_);
 	}
 	
 	private void generateAddMethod() {
@@ -190,6 +240,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	    if (!builtInFunctionsGenerated) {
 	        generateAddMethod();
 	        generateAddAllMethod();
+	        generateUnionMethod();
 	        builtInFunctionsGenerated = true;
 	    }
 	}
@@ -203,6 +254,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	 */
 	public void visit(MethodDeclNameVOID method) {
 		ensureBuiltInFunctions();
+		this.currentMethod = method.obj;
 		// Check if this is the main method to record its entry point
 		if ("main".equalsIgnoreCase(method.getMethodName())) {
 			mainPc = Code.pc;
@@ -223,6 +275,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	 */
 	public void visit(MethodDeclNameType method) {
 		ensureBuiltInFunctions();
+		this.currentMethod = method.obj;
 		method.obj.setAdr(Code.pc); // Set the method's starting address
 
 		// Generate the 'enter' instruction.
@@ -239,6 +292,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	public void visit(MethodDecl methodDecl) {
 		Code.put(Code.exit);
 		Code.put(Code.return_);
+		this.currentMethod = null;
 	}
 	
 	// =================================================================
@@ -251,17 +305,29 @@ public class CodeGenerator extends VisitorAdaptor {
 	 */
 	@Override
 	public void visit(StatementPrint statementPrint) {
-		Struct type = statementPrint.getExpr().struct;
+	    // 1. Determine the print width first.
+	    int width;
+	    if (statementPrint.getPrintConst() instanceof PrintConstExists) {
+	        // A width was provided, e.g., print(x, 10)
+	        width = ((PrintConstExists)statementPrint.getPrintConst()).getNum();
+	    } else {
+	        // No width was provided, use a default.
+	        width = 5;
+	    }
+	    
+	    // The expression result (a single value or an array address) is already on the stack.
+	    Struct type = statementPrint.getExpr().struct;
 
-		if (type.getKind() != Struct.Array) {
-			Code.loadConst(5); 
-			if (type == Tab.charType) {
-				Code.put(Code.bprint);
-			} else {
-				Code.put(Code.print);
-			}
-		} else {
-			// Case 2: Printing an Array or a Set
+	    if (type.getKind() != Struct.Array) {
+	        // --- Case 1: Printing a single value ---
+	        Code.loadConst(width); // Push the determined width
+	        if (type == Tab.charType) {
+	            Code.put(Code.bprint);
+	        } else {
+	            Code.put(Code.print);
+	        }
+	    } else {
+	        // --- Case 2: Printing an Array or a Set ---
 	        boolean isSet = (type == TabExtended.setType);
 	        int loopEnd;
 
@@ -272,35 +338,35 @@ public class CodeGenerator extends VisitorAdaptor {
 	        }
 
 	        int loopStart = Code.pc;
-	        // stack at loop start: addr, i
+	        // stack: addr, i
 
-	        // --- Loop Condition using the robust pattern for BOTH cases ---
-	        Code.put(Code.dup2);      // Duplicate state for the check (addr, i, addr, i)
-	        Code.put(Code.dup_x1);    // Manipulate the copy
-	        Code.put(Code.pop);       // The copy is now (i, addr)
+	        // Loop Condition
+	        Code.put(Code.dup2);
+	        Code.put(Code.dup_x1);
+	        Code.put(Code.pop);
 
 	        if (isSet) {
 	            Code.loadConst(0);
-	            Code.put(Code.aload);     // Get size from set[0] (consumes copy of addr)
+	            Code.put(Code.aload);
 	            Code.putFalseJump(Code.le, 0); 
-	            loopEnd = Code.pc - 2;    // Jumps if i > size
+	            loopEnd = Code.pc - 2;
 	        } else {
-	            Code.put(Code.arraylength); // Get array length (consumes copy of addr)
+	            Code.put(Code.arraylength);
 	            Code.putFalseJump(Code.lt, 0); 
-	            loopEnd = Code.pc - 2;    // Jumps if i >= len
+	            loopEnd = Code.pc - 2;
 	        }
-	        // stack after check (if continuing): addr, i
+	        // stack after check: addr, i
 
-	        // --- Loop Body ---
-	        Code.put(Code.dup2);      // Duplicate state for use in the body
+	        // Loop Body
+	        Code.put(Code.dup2);
 	        
 	        if (type.getElemType() == Tab.charType) {
 	            Code.put(Code.baload);
-	            Code.loadConst(1);
+	            Code.loadConst(width); // <<< FIX: Use the determined width
 	            Code.put(Code.bprint);
 	        } else {
 	            Code.put(Code.aload);
-	            Code.loadConst(5);
+	            Code.loadConst(width); // <<< FIX: Use the determined width
 	            Code.put(Code.print);
 	        }
 	        
@@ -313,18 +379,18 @@ public class CodeGenerator extends VisitorAdaptor {
 	        Code.put(Code.add);
 	        Code.putJump(loopStart);
 	        
-	        // --- Cleanup ---
+	        // Cleanup
 	        Code.fixup(loopEnd);
-	        Code.put(Code.pop); // pop final i
-	        Code.put(Code.pop); // pop addr
-		}
+	        Code.put(Code.pop);
+	        Code.put(Code.pop);
+	    }
 	}
 
 	/**
 	 * Loads the constant width for a `print` statement.
 	 */
 	public void visit(PrintConstExists pConst) {
-		Code.loadConst(pConst.getNum());
+//		Code.loadConst(pConst.getNum());
 	}
 	
 	/**
@@ -591,52 +657,9 @@ public class CodeGenerator extends VisitorAdaptor {
 	
 	@Override
 	public void visit(ExprUnion expr) {
-		// This is called for the expression `s2 union s3`.
-	    // The addresses of s2 and s3 are on the stack from visiting the children.
-	    // Stack: ..., s2_addr, s3_addr
-
-	    // --- 1. Calculate required capacity (s2[0] + s3[0]) ---
-	    Code.put(Code.dup2);        // Stack: s2, s3, s2, s3
-	    Code.loadConst(0);          // Stack: s2, s3, s2, s3, 0
-	    Code.put(Code.aload);       // Pops s3, 0; Pushes s3[0]. Stack: s2, s3, s2, size(s3)
-	    Code.put(Code.dup_x1);      // Stack: s2, s3, size(s3), s2, size(s3)
-	    Code.put(Code.pop);         // Stack: s2, s3, size(s3), s2
-	    Code.loadConst(0);          // Stack: s2, s3, size(s3), s2, 0
-	    Code.put(Code.aload);       // Pops s2, 0; Pushes s2[0]. Stack: s2, s3, size(s3), size(s2)
-	    Code.put(Code.add);         // Stack: s2, s3, new_capacity
-
-	    // --- 2. Create the new temporary set ---
-	    Code.loadConst(1); 
-	    Code.put(Code.add);         // Stack: s2, s3, new_capacity + 1
-	    Code.put(Code.newarray); 
-	    Code.put(1);                // Stack: s2, s3, temp_set_addr
-	    Code.put(Code.dup); 
-	    Code.loadConst(0); 
-	    Code.loadConst(0); 
-	    Code.put(Code.astore);      // Initialize temp_set[0] = 0
-	    // Stack: s2_addr, s3_addr, temp_set_addr
-
-	    // --- 3. Populate the temporary set using addAll ---
-	    // a) Call addAllFromSet(temp_set, s2)
-	    Code.put(Code.dup_x2);      // temp, s2, s3, temp
-	    Code.put(Code.dup_x2);      // temp, temp, s2, s3, temp
-	    Code.put(Code.pop);         // temp, temp, s2, s3
-	    Code.put(Code.dup_x2);		// temp, s3, temp, s2, s3
-	    Code.put(Code.pop);         // temp, s3, temp (dest), s2 (src) -- ready for call
-	    
-	    Obj addAllSetMeth = Tab.find("addAllFromSet");
+		Obj unionMeth = Tab.find("union");
 	    Code.put(Code.call);
-	    Code.put2(addAllSetMeth.getAdr() - Code.pc + 2);
-	    // After the call, arguments are consumed. Stack: temp_set_addr, s3_addr
-
-	    // b) Call addAllFromSet(temp_set, s3)
-	    Code.put(Code.dup_x1);
-	    Code.put(Code.pop);         // s3_addr, temp_set_addr (swapped and ready for call)
-
-	    Code.put(Code.call);
-	    Code.put2(addAllSetMeth.getAdr() - Code.pc + 2);
-	    // After the call, arguments are consumed. The stack is left with the final result.
-	    // Stack: ..., temp_set_addr
+	    Code.put2(unionMeth.getAdr() - Code.pc + 1);
 	}
 	
 	// --- Loading constants when used as factors in expressions ---
