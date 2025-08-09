@@ -453,6 +453,25 @@ public class SemanticPass extends VisitorAdaptor {
         	return;
         }
         
+        // SPECIAL CASE for ord(char)
+        if (func == Tab.ordObj) {
+            List<Struct> actuals = collectActualParams(call.getActPars());
+            if (actuals.size() != 1 || !actuals.get(0).equals(Tab.charType)) {
+                report_error("Greska: Metoda 'ord' ocekuje jedan argument tipa char.", call);
+            }
+            call.struct = Tab.intType; // The result of ord() is an int
+            return;
+        }
+
+        // SPECIAL CASE for chr(int)
+        if (func == Tab.chrObj) {
+            List<Struct> actuals = collectActualParams(call.getActPars());
+            if (actuals.size() != 1 || !actuals.get(0).equals(Tab.intType)) {
+                report_error("Greska: Metoda 'chr' ocekuje jedan argument tipa int.", call);
+            }
+            call.struct = Tab.charType; // The result of chr() is a char
+            return;
+        }
         // <<< SPECIAL CASE FOR len() >>>
         if (func == TabExtended.lenMeth) {
             List<Struct> actuals = collectActualParams(call.getActPars());

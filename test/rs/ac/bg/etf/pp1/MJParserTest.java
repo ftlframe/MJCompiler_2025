@@ -31,7 +31,7 @@ public class MJParserTest {
 		
 		Reader br = null;
 		try {
-			File sourceCode = new File("test/test301_2025.mj");
+			File sourceCode = new File("test/setTest.mj");
 			log.info("Compiling source file: " + sourceCode.getAbsolutePath());
 			
 			br = new BufferedReader(new FileReader(sourceCode));
@@ -58,7 +58,7 @@ public class MJParserTest {
 			TabExtended.dump();
 			
 			if(v.passed()){
-				File objFile = new File("test/test301_2025.obj");
+				File objFile = new File("test/setTest.obj");
 				if(objFile.exists()) objFile.delete();
 				
 				CodeGenerator codeGenerator = new CodeGenerator();
