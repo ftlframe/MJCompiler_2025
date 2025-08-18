@@ -1,6 +1,10 @@
 package rs.ac.bg.etf.pp1;
 
 import rs.ac.bg.etf.pp1.ast.VisitorAdaptor;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import rs.ac.bg.etf.pp1.CounterVisitor.VarCounter;
 import rs.ac.bg.etf.pp1.ast.*;
 import rs.etf.pp1.mj.runtime.Code;
@@ -16,6 +20,25 @@ public class CodeGenerator extends VisitorAdaptor {
 	private Obj currentMethod = null;
 	public int getMainPc() {
 		return mainPc;
+	}
+	
+
+	private void storeLocal(int slot) {
+	    if (slot >= 0 && slot <= 3) {
+	        Code.put(Code.store_n + slot);
+	    } else {
+	        Code.put(Code.store);
+	        Code.put(slot);
+	    }
+	}
+
+	private void loadLocal(int slot) {
+	    if (slot >= 0 && slot <= 3) {
+	        Code.put(Code.load_n + slot);
+	    } else {
+	        Code.put(Code.load);
+	        Code.put(slot);
+	    }
 	}
 
 	/**
@@ -84,16 +107,153 @@ public class CodeGenerator extends VisitorAdaptor {
 	    Code.put(Code.return_);
 	}
 	
+	private void generateIntersectionMethod() {
+	    Obj meth = Tab.find("intersection");
+	    meth.setAdr(Code.pc);
+
+	    // enter: 2 params (s1, s2), 4 locals (i, j, elem, temp_set)
+	    Code.put(Code.enter); Code.put(2); Code.put(6);
+	    int temp_set_slot = 2, i_slot = 3, j_slot = 4, elem_slot = 5;
+
+	    List<Integer> innerLoopBreakPatches = new ArrayList<>();
+
+	    // 1. Create a new temporary set with capacity = s1[0]
+	    loadLocal(0);
+	    Code.loadConst(0); 
+	    Code.put(Code.aload);
+	    Code.loadConst(1); Code.put(Code.add);
+	    Code.put(Code.newarray); Code.put(1);
+	    Code.put(Code.dup); Code.loadConst(0); Code.loadConst(0); Code.put(Code.astore);
+	    storeLocal(temp_set_slot);
+
+	    // 2. For each element in s1...
+	    Code.loadConst(1); storeLocal(i_slot); // i = 1
+	    int outerLoopStart = Code.pc;
+	    loadLocal(i_slot); loadLocal(0); Code.loadConst(0); Code.put(Code.aload);
+	    Code.putFalseJump(Code.le, 0); int outerLoopEnd = Code.pc - 2;
+	    
+	    loadLocal(0); loadLocal(i_slot); Code.put(Code.aload);
+	    storeLocal(elem_slot);
+
+	    // 3. ...check if it exists in s2.
+	    Code.loadConst(1); storeLocal(j_slot); // j = 1
+	    int innerLoopStart = Code.pc;
+	    loadLocal(j_slot); loadLocal(1); Code.loadConst(0); Code.put(Code.aload);
+	    Code.putFalseJump(Code.le, 0); int innerLoopEnd = Code.pc - 2;
+
+	    loadLocal(elem_slot);
+	    loadLocal(1); loadLocal(j_slot); Code.put(Code.aload);
+	    Code.putFalseJump(Code.eq, 0); int notFound = Code.pc - 2;
+	    
+	    // If found, add to result and then break the inner loop
+	    loadLocal(temp_set_slot); loadLocal(elem_slot);
+	    Code.put(Code.call); Code.put2(Tab.find("add").getAdr() - Code.pc + 1);
+	    
+	    Code.putJump(0);
+	    innerLoopBreakPatches.add(Code.pc - 2);
+	    
+	    Code.fixup(notFound);
+
+	    Code.put(Code.inc); Code.put(j_slot); Code.put(1); // j++
+	    Code.putJump(innerLoopStart);
+	    
+	    // This is the point after the inner loop. Patch all breaks to jump here.
+	    Code.fixup(innerLoopEnd);
+	    for (Integer patchAddr : innerLoopBreakPatches) {
+	        Code.fixup(patchAddr);
+	    }
+	    innerLoopBreakPatches.clear();
+
+	    Code.put(Code.inc); Code.put(i_slot); Code.put(1); // i++
+	    Code.putJump(outerLoopStart);
+	    Code.fixup(outerLoopEnd);
+	    
+	    // 4. Return the new set
+	    loadLocal(temp_set_slot);
+	    Code.put(Code.exit); Code.put(Code.return_);
+	}
+
+	private void generateDifferenceMethod() {
+	    Obj meth = Tab.find("difference");
+	    meth.setAdr(Code.pc);
+
+	    // enter: 2 params (s1, s2), 5 locals (i, j, elem, found, temp_set)
+	    Code.put(Code.enter); Code.put(2); Code.put(7);
+	    int temp_set_slot = 2, i_slot = 3, j_slot = 4, elem_slot = 5, found_slot = 6;
+
+	    List<Integer> innerLoopBreakPatches = new ArrayList<>();
+
+	    // 1. Create a new temporary set
+	    loadLocal(0); Code.loadConst(0); Code.put(Code.aload);
+	    Code.loadConst(1); Code.put(Code.add);
+	    Code.put(Code.newarray); Code.put(1);
+	    Code.put(Code.dup); Code.loadConst(0); Code.loadConst(0); Code.put(Code.astore);
+	    storeLocal(temp_set_slot);
+
+	    // 2. For each element in s1...
+	    Code.loadConst(1); storeLocal(i_slot); // i = 1
+	    int outerLoopStart = Code.pc;
+	    loadLocal(i_slot); loadLocal(0); Code.loadConst(0); Code.put(Code.aload);
+	    Code.putFalseJump(Code.le, 0); int outerLoopEnd = Code.pc - 2;
+	    
+	    loadLocal(0); loadLocal(i_slot); Code.put(Code.aload);
+	    storeLocal(elem_slot);
+	    Code.loadConst(0); storeLocal(found_slot); // found = false
+
+	    // 3. ...check if it exists in s2.
+	    Code.loadConst(1); storeLocal(j_slot); // j = 1
+	    int innerLoopStart = Code.pc;
+	    loadLocal(j_slot); loadLocal(1); Code.loadConst(0); Code.put(Code.aload);
+	    Code.putFalseJump(Code.le, 0); int innerLoopEnd = Code.pc - 2;
+
+	    loadLocal(elem_slot);
+	    loadLocal(1); loadLocal(j_slot); Code.put(Code.aload);
+	    Code.putFalseJump(Code.eq, 0); int notFound = Code.pc - 2; // Jump if NOT equal
+	    
+	    // If found (fall-through), set found=true and break
+	    Code.loadConst(1); storeLocal(found_slot);
+	    Code.putJump(0);
+	    innerLoopBreakPatches.add(Code.pc - 2);
+	    
+	    Code.fixup(notFound);
+
+	    Code.put(Code.inc); Code.put(j_slot); Code.put(1); // j++
+	    Code.putJump(innerLoopStart);
+	    
+	    Code.fixup(innerLoopEnd);
+	    for (Integer patchAddr : innerLoopBreakPatches) {
+	        Code.fixup(patchAddr);
+	    }
+	    innerLoopBreakPatches.clear();
+
+	    // 4. If not found in s2 (found == 0), add it to the result.
+	    loadLocal(found_slot); Code.loadConst(0);
+
+	    // Jump if found != 0. The inverse of 'ne' is 'eq'.
+	    Code.putFalseJump(Code.eq, 0); int endIf = Code.pc - 2;
+	    
+	    // Fall-through here if found == 0
+	    loadLocal(temp_set_slot); loadLocal(elem_slot);
+	    Code.put(Code.call); Code.put2(Tab.find("add").getAdr() - Code.pc + 1);
+	    Code.fixup(endIf); // This is the jump target
+
+	    Code.put(Code.inc); Code.put(i_slot); Code.put(1); // i++
+	    Code.putJump(outerLoopStart);
+	    Code.fixup(outerLoopEnd);
+	    
+	    // 5. Return the new set
+	    loadLocal(temp_set_slot);
+	    Code.put(Code.exit); Code.put(Code.return_);
+	}
+
 	private void generateAddMethod() {
-		Obj addMeth = Tab.find("add");
+	    Obj addMeth = Tab.find("add");
 	    addMeth.setAdr(Code.pc);
 	    
 	    Code.put(Code.enter); Code.put(2); Code.put(3);
 	    int i_local_idx = 2;
 
-	    // <<< SECTION 1: CORRECTED FULLNESS CHECK >>>
-	    // We will check if size >= capacity. If so, we exit.
-	    
+	    // --- 1. Check if the set is full ---
 	    // Push s[0] (current size)
 	    Code.put(Code.load_n + 0); 
 	    Code.loadConst(0);
@@ -106,15 +266,18 @@ public class CodeGenerator extends VisitorAdaptor {
 	    Code.put(Code.sub);
 	    
 	    // Stack is now: size, capacity
-	    // Jump to exit if size >= capacity.
-	    // The inverse of "greater or equal" is "less than".
+	    // If size < capacity, jump past the trap instruction.
 	    Code.putFalseJump(Code.ge, 0); int canAddPatch = Code.pc - 2;
-	    // If the condition is met (set is full), fall through to exit.
-	    Code.put(Code.exit); Code.put(Code.return_);
-	    Code.fixup(canAddPatch);
-	    // If we get here, the set is not full and the stack is clean.
+	    
+	    // <<< THE FIX IS HERE >>>
+	    // If the set is full (size >= capacity), fall through and trap.
+	    Code.put(Code.trap); 
+	    Code.put(1); // Error code 1 for "Set capacity exceeded".
+	    
+	    Code.fixup(canAddPatch); // Continue here if not full.
+	    // The stack is now clean.
 
-	    // 2. Check for duplicates (This logic is now correct)
+	    // 2. Check for duplicates
 	    Code.loadConst(1); Code.put(Code.store_n + i_local_idx);
 	    int dupLoopStart = Code.pc;
 	    
@@ -136,7 +299,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	    Code.putJump(dupLoopStart);
 	    Code.fixup(dupLoopEnd);
 
-	    // 3. Add element and increment size (This logic is now correct)
+	    // 3. Add element and increment size
 	    Code.put(Code.load_n + 0);
 	    Code.put(Code.dup);
 	    Code.loadConst(0);
@@ -241,6 +404,8 @@ public class CodeGenerator extends VisitorAdaptor {
 	        generateAddMethod();
 	        generateAddAllMethod();
 	        generateUnionMethod();
+	        generateIntersectionMethod();
+	        generateDifferenceMethod();
 	        builtInFunctionsGenerated = true;
 	    }
 	}
@@ -312,7 +477,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	        width = ((PrintConstExists)statementPrint.getPrintConst()).getNum();
 	    } else {
 	        // No width was provided, use a default.
-	        width = 5;
+	        width = 1;
 	    }
 	    
 	    // The expression result (a single value or an array address) is already on the stack.
@@ -660,6 +825,18 @@ public class CodeGenerator extends VisitorAdaptor {
 		Obj unionMeth = Tab.find("union");
 	    Code.put(Code.call);
 	    Code.put2(unionMeth.getAdr() - Code.pc + 1);
+	}
+	@Override
+	public void visit(ExprIntersection expr) {
+		Obj unionMeth = Tab.find("intersection");
+		Code.put(Code.call);
+		Code.put2(unionMeth.getAdr() - Code.pc + 1);
+	}
+	@Override
+	public void visit(ExprDifference expr) {
+		Obj unionMeth = Tab.find("difference");
+		Code.put(Code.call);
+		Code.put2(unionMeth.getAdr() - Code.pc + 1);
 	}
 	
 	// --- Loading constants when used as factors in expressions ---

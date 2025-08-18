@@ -53,6 +53,8 @@ import java_cup.runtime.Symbol;
 "for"		{ return new_symbol(sym.FOR, yytext()); }
 "static"	{ return new_symbol(sym.STATIC, yytext()); }
 "union"		{ return new_symbol(sym.UNION, yytext()); }
+"difference" { return new_symbol(sym.DIFF, yytext()); }
+"intersection" { return new_symbol(sym.INTERSECTION, yytext()); }
 "++"		{ return new_symbol(sym.INCREMENT, yytext());}
 "--"		{ return new_symbol(sym.DECREMENT, yytext());}
 "+" 		{ return new_symbol(sym.PLUS, yytext()); }

@@ -1,0 +1,87 @@
+program ComprehensiveSetTests
+
+
+// Declare sets for various scenarios
+set s_123, s_234, s_56, s_empty, s_result;
+
+{
+    void main() {
+        // --- Setup ---
+        // Initialize all sets that will be used in the tests.
+
+        // s_123 = {10, 20, 30}
+        s_123 = new set[5];
+        add(s_123, 10);
+        add(s_123, 20);
+        add(s_123, 30);
+
+        // s_234 = {20, 30, 40}
+        s_234 = new set[5];
+        add(s_234, 20);
+        add(s_234, 30);
+        add(s_234, 40);
+
+        // s_56 = {50, 60} (Disjoint from the others)
+        s_56 = new set[5];
+        add(s_56, 50);
+        add(s_56, 60);
+
+        // s_empty = {}
+        s_empty = new set[5];
+        
+        // s_result will hold the output of our operations
+        s_result = new set[10];
+
+        // --- INTERSECTION TESTS ---
+        print('I'); print('n'); print('t'); print('e'); print('r'); print('s'); print('e'); print('c'); print('t'); print('i'); print('o'); print('n'); print(' '); print('T'); print('e'); print('s'); print('t'); print('s'); print(':');
+        print(eol);
+
+        // Case 1: Partial Overlap
+        s_result = s_123 intersection s_234;
+        print('{'); print(10); print(','); print(20); print(','); print(30); print('}'); print(' '); print('i'); print('n'); print('t'); print('e'); print('r'); print('s'); print('e'); print('c'); print('t'); print('i'); print('o'); print('n'); print(' '); print('{'); print(20); print(','); print(30); print(','); print(40); print('}'); print(' '); print('='); print(' ');
+        print(s_result); // Expected: 20 30
+        print(eol);
+
+        // Case 2: No Overlap (Disjoint Sets)
+        s_result = s_123 intersection s_56;
+        print('{'); print(10); print(','); print(20); print(','); print(30); print('}'); print(' '); print('i'); print('n'); print('t'); print('e'); print('r'); print('s'); print('e'); print('c'); print('t'); print('i'); print('o'); print('n'); print(' '); print('{'); print(50); print(','); print(60); print('}'); print(' '); print('='); print(' ');
+        print(s_result); // Expected: (empty set)
+        print(eol);
+
+        // Case 3: With an Empty Set
+        s_result = s_123 intersection s_empty;
+        print('{'); print(10); print(','); print(20); print(','); print(30); print('}'); print(' '); print('i'); print('n'); print('t'); print('e'); print('r'); print('s'); print('e'); print('c'); print('t'); print('i'); print('o'); print('n'); print(' '); print('{'); print('}'); print(' '); print('='); print(' ');
+        print(s_result); // Expected: (empty set)
+        print(eol);
+        print(eol);
+
+
+        // --- DIFFERENCE TESTS ---
+        print('D'); print('i'); print('f'); print('f'); print('e'); print('r'); print('e'); print('n'); print('c'); print('e'); print(' '); print('T'); print('e'); print('s'); print('t'); print('s'); print(':');
+        print(eol);
+
+        // Case 1: Partial Overlap
+        s_result = s_123 difference s_234;
+        print('{'); print(10); print(','); print(20); print(','); print(30); print('}'); print(' '); print('d'); print('i'); print('f'); print('f'); print('e'); print('r'); print('e'); print('n'); print('c'); print('e'); print(' '); print('{'); print(20); print(','); print(30); print(','); print(40); print('}'); print(' '); print('='); print(' ');
+        print(s_result); // Expected: 10
+        print(eol);
+
+        // Case 2: Reverse Partial Overlap
+        s_result = s_234 difference s_123;
+        print('{'); print(20); print(','); print(30); print(','); print(40); print('}'); print(' '); print('d'); print('i'); print('f'); print('f'); print('e'); print('r'); print('e'); print('n'); print('c'); print('e'); print(' '); print('{'); print(10); print(','); print(20); print(','); print(30); print('}'); print(' '); print('='); print(' ');
+        print(s_result); // Expected: 40
+        print(eol);
+
+        // Case 3: With an Empty Set
+        s_result = s_123 difference s_empty;
+        print('{'); print(10); print(','); print(20); print(','); print(30); print('}'); print(' '); print('d'); print('i'); print('f'); print('f'); print('e'); print('r'); print('e'); print('n'); print('c'); print('e'); print(' '); print('{'); print('}'); print(' '); print('='); print(' ');
+        print(s_result); // Expected: 10 20 30
+        print(eol);
+        
+        // Case 4: Identical Sets
+        s_result = s_123 difference s_123;
+        print('{'); print(10); print(','); print(20); print(','); print(30); print('}'); print(' '); print('d'); print('i'); print('f'); print('f'); print('e'); print('r'); print('e'); print('n'); print('c'); print('e'); print(' '); print('{'); print(10); print(','); print(20); print(','); print(30); print('}'); print(' '); print('='); print(' ');
+        print(s_result); // Expected: (empty set)
+        print(eol);
+    }
+}

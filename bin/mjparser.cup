@@ -44,7 +44,7 @@ scan with {:
 	return s;
 :}
 
-terminal PROG, BREAK, CLASS, ELSE, CONST, IF, NEW, PRINT, READ, RETURN, VOID, EXTENDS, CONTINUE, FOR, STATIC, UNION;
+terminal PROG, BREAK, CLASS, ELSE, CONST, IF, NEW, PRINT, READ, RETURN, VOID, EXTENDS, CONTINUE, FOR, STATIC, UNION, DIFF, INTERSECTION;
 terminal PLUS, MINUS, MUL, DIV, MOD, EQUALEQUAL, NOTEQUAL, GREATER, GREATEROREQUAL, LESS, LESSOREQUAL, AND, OR;
 terminal EQUAL, INCREMENT, DECREMENT, SEMI, COLON, COMMA, DOT, LPAREN, RPAREN, LBRACKET, RBRACKET, LBRACE, RBRACE, LAMBDA;
 terminal String IDENT, BOOL;
@@ -160,6 +160,10 @@ PrintConst ::= (PrintConstExists) COMMA NUM:num
 			;
 			
 Expr ::= (ExprUnion) Expr:e UNION Term:t
+		|
+		(ExprIntersection) Expr:e INTERSECTION Term:t
+		|
+		(ExprDifference) Expr:e DIFF Term:t
 		|
 		(ExprMinus) MINUS Term:t
 		|

@@ -1,0 +1,8 @@
+program ord_chr_test
+{
+	void main() {
+		print(ord('a'));
+		print(chr(97));
+		print(chr(92+5));
+	}
+}

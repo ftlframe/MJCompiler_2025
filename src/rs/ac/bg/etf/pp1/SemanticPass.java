@@ -388,6 +388,29 @@ public class SemanticPass extends VisitorAdaptor {
             expr.struct = TabExtended.noType;
         }
     }
+    
+	
+	public void visit(ExprIntersection expr) {
+	    Struct lhs = expr.getExpr().struct;
+	    Struct rhs = expr.getTerm().struct;
+	    if (lhs != null && rhs != null && lhs.equals(TabExtended.setType) && rhs.equals(TabExtended.setType)) {
+	        expr.struct = TabExtended.setType;
+	    } else {
+	        report_error("Operatori za presek (intersection) moraju biti tipa set.", expr);
+	        expr.struct = TabExtended.noType;
+	    }
+	}
+	
+	public void visit(ExprDifference expr) {
+	    Struct lhs = expr.getExpr().struct;
+	    Struct rhs = expr.getTerm().struct;
+	    if (lhs != null && rhs != null && lhs.equals(TabExtended.setType) && rhs.equals(TabExtended.setType)) {
+	        expr.struct = TabExtended.setType;
+	    } else {
+	        report_error("Operatori za razliku (difference) moraju biti tipa set.", expr);
+	        expr.struct = TabExtended.noType;
+	    }
+	}
 
     // =================================================================
     // Visitors for function calls
@@ -472,6 +495,7 @@ public class SemanticPass extends VisitorAdaptor {
             call.struct = Tab.charType; // The result of chr() is a char
             return;
         }
+        
         // <<< SPECIAL CASE FOR len() >>>
         if (func == TabExtended.lenMeth) {
             List<Struct> actuals = collectActualParams(call.getActPars());

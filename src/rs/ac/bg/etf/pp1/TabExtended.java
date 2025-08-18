@@ -59,6 +59,24 @@ public class TabExtended extends Tab {
         unionMeth.setLocals(currentScope.getLocals());
         unionMeth.setLevel(2); // 2 formal parameters
         closeScope();
+        
+        // set intersection(set s1, set s2)
+        Obj intersectionMeth = insert(Obj.Meth, "intersection", setType);
+        openScope();
+        insert(Obj.Var, "s1", setType);
+        insert(Obj.Var, "s2", setType);
+        intersectionMeth.setLocals(currentScope.getLocals());
+        intersectionMeth.setLevel(2);
+        closeScope();
+
+        // set difference(set s1, set s2)
+        Obj differenceMeth = insert(Obj.Meth, "difference", setType);
+        openScope();
+        insert(Obj.Var, "s1", setType);
+        insert(Obj.Var, "s2", setType);
+        differenceMeth.setLocals(currentScope.getLocals());
+        differenceMeth.setLevel(2);
+        closeScope();
 	}
 
 	public static void dump() {

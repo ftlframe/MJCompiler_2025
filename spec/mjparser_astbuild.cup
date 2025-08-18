@@ -44,7 +44,7 @@ scan with {:
 	return s;
 :}
 
-terminal PROG, BREAK, CLASS, ELSE, CONST, IF, NEW, PRINT, READ, RETURN, VOID, EXTENDS, CONTINUE, FOR, STATIC, UNION;
+terminal PROG, BREAK, CLASS, ELSE, CONST, IF, NEW, PRINT, READ, RETURN, VOID, EXTENDS, CONTINUE, FOR, STATIC, UNION, DIFF, INTERSECTION;
 terminal PLUS, MINUS, MUL, DIV, MOD, EQUALEQUAL, NOTEQUAL, GREATER, GREATEROREQUAL, LESS, LESSOREQUAL, AND, OR;
 terminal EQUAL, INCREMENT, DECREMENT, SEMI, COLON, COMMA, DOT, LPAREN, RPAREN, LBRACKET, RBRACKET, LBRACE, RBRACE, LAMBDA;
 terminal String IDENT, BOOL;
@@ -171,6 +171,10 @@ PrintConst ::= (PrintConstExists) COMMA NUM:num {: RESULT=new PrintConstExists(n
 			;
 			
 Expr ::= (ExprUnion) Expr:e UNION Term:t {: RESULT=new ExprUnion(e, t); RESULT.setLine(eleft); :}
+		|
+		(ExprIntersection) Expr:e INTERSECTION Term:t {: RESULT=new ExprIntersection(e, t); RESULT.setLine(eleft); :}
+		|
+		(ExprDifference) Expr:e DIFF Term:t {: RESULT=new ExprDifference(e, t); RESULT.setLine(eleft); :}
 		|
 		(ExprMinus) MINUS Term:t {: RESULT=new ExprMinus(t); RESULT.setLine(tleft); :}
 		|
