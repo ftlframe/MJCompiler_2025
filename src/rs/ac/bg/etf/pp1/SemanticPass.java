@@ -441,8 +441,6 @@ public class SemanticPass extends VisitorAdaptor {
             return;
         }
 
-        // <<< FIX 1: Checks for void methods like add/addAll belong here >>>
-
         // SPECIAL CASE for add(set, int)
         if (func.getName().equals("add")) {
             List<Struct> actuals = collectActualParams(call.getActPars());
@@ -469,6 +467,17 @@ public class SemanticPass extends VisitorAdaptor {
                 if (firstArg != TabExtended.setType || !isSecondArgIntArray) {
                     report_error("Greska: Metoda 'addAll' mora biti pozvana sa (set, int[] ili set).", call);
                 }
+            }
+            return; // Skip generic check
+        }
+        
+        // SPECIAL CASE for remove(set, int)
+        if (func.getName().equals("remove")) {
+            List<Struct> actuals = collectActualParams(call.getActPars());
+            if (actuals.size() != 2) {
+                report_error("Greska: Metoda 'remove' ocekuje 2 argumenta.", call);
+            } else if (actuals.get(0) != TabExtended.setType || actuals.get(1) != Tab.intType) {
+                report_error("Greska: Metoda 'remove' mora biti pozvana sa (set, int).", call);
             }
             return; // Skip generic check
         }

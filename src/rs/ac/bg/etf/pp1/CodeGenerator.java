@@ -406,6 +406,74 @@ public class CodeGenerator extends VisitorAdaptor {
 	    Code.put(Code.return_);
 	}
 	
+	private void generateRemoveMethod() {
+	    Obj meth = Tab.find("remove");
+	    meth.setAdr(Code.pc);
+
+	    // enter: 2 params (set, elem), 2 locals (i, index_found)
+	    Code.put(Code.enter); Code.put(2); Code.put(4);
+	    int i_slot = 2;
+	    int index_found_slot = 3;
+
+	    List<Integer> breakPatches = new ArrayList<>();
+
+	    // 1. Find the index of the element to remove.
+	    Code.loadConst(-1); storeLocal(index_found_slot); // index_found = -1
+	    Code.loadConst(1); storeLocal(i_slot); // i = 1
+	    
+	    int loopStart = Code.pc;
+	    // Loop condition: for (i = 1; i <= set[0]; i++)
+	    loadLocal(i_slot); loadLocal(0); Code.loadConst(0); Code.put(Code.aload);
+	    Code.putFalseJump(Code.le, 0); int loopEnd = Code.pc - 2;
+
+	    // if (set[i] == elem)
+	    loadLocal(0); loadLocal(i_slot); Code.put(Code.aload);
+	    loadLocal(1); // element
+	    
+	    // <<< FIX 1: Corrected jump condition >>>
+	    // Jump if NOT equal. The inverse of 'eq' is 'ne'.
+	    Code.putFalseJump(Code.eq, 0); int notFound = Code.pc - 2;
+	    
+	    // If found (fall-through):
+	    loadLocal(i_slot); storeLocal(index_found_slot);
+	    
+	    // <<< FIX 2: Correct 'break' implementation >>>
+	    Code.putJump(0); // Generate placeholder jump for the 'break'
+	    breakPatches.add(Code.pc - 2); // Save its address to be patched
+	    
+	    Code.fixup(notFound);
+	    Code.put(Code.inc); Code.put(i_slot); Code.put(1); // i++
+	    Code.putJump(loopStart);
+	    
+	    // This is the point after the loop. Patch all breaks to jump here.
+	    Code.fixup(loopEnd);
+	    for (int addr : breakPatches) {
+	        Code.fixup(addr);
+	    }
+
+	    // 2. If element was found (index_found != -1)...
+	    loadLocal(index_found_slot); Code.loadConst(-1);
+	    Code.putFalseJump(Code.ne, 0); int endOfMethod = Code.pc - 2;
+
+	    // 3. ...move the last element into its place.
+	    // set[index_found] = set[set[0]];
+	    loadLocal(0); // dest address: set
+	    loadLocal(index_found_slot); // dest index: index_found
+	    loadLocal(0); // src address: set
+	    loadLocal(0); Code.loadConst(0); Code.put(Code.aload); // src index: set[0]
+	    Code.put(Code.aload); // value: set[set[0]]
+	    Code.put(Code.astore);
+
+	    // 4. Decrement the size counter: set[0]--
+	    loadLocal(0); Code.loadConst(0); Code.put(Code.dup2);
+	    Code.put(Code.aload); Code.loadConst(1); Code.put(Code.sub);
+	    Code.put(Code.astore);
+	    
+	    Code.fixup(endOfMethod);
+	    Code.put(Code.exit);
+	    Code.put(Code.return_);
+	}
+	
 	private void ensureBuiltInFunctions() {
 	    if (!builtInFunctionsGenerated) {
 	        generateAddMethod();
@@ -413,6 +481,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	        generateUnionMethod();
 	        generateIntersectionMethod();
 	        generateDifferenceMethod();
+	        generateRemoveMethod();
 	        builtInFunctionsGenerated = true;
 	    }
 	}

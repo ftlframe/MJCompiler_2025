@@ -1,0 +1,55 @@
+program TestRemoveMethod
+
+set s1;
+
+{
+    void main() {
+    
+        // --- Setup ---
+        // Initialize s1 = {10, 20, 30, 40, 50}
+        s1 = new set[5];
+        add(s1, 10);
+        add(s1, 20);
+        add(s1, 30);
+        add(s1, 40);
+        add(s1, 50);
+
+        print('I'); print('n'); print('i'); print('t'); print('i'); print('a'); print('l'); print(' '); print('s'); print('e'); print('t'); print(':'); print(' ');
+        print(s1); 
+        print(eol);
+        print(eol);
+
+        // --- Test 1: Remove an element from the middle ---
+        remove(s1, 20);
+        
+        print('A'); print('f'); print('t'); print('e'); print('r'); print(' '); print('r'); print('e'); print('m'); print('o'); print('v'); print('e'); print('('); print('s'); print('1'); print(','); print(' '); print('2'); print('0'); print(')'); print(':'); print(' ');
+        print(s1); 
+        print(eol);
+        print(eol);
+        
+        // --- Test 2: Remove the new last element ---
+        remove(s1, 40);
+
+        print('A'); print('f'); print('t'); print('e'); print('r'); print(' '); print('r'); print('e'); print('m'); print('o'); print('v'); print('e'); print('('); print('s'); print('1'); print(','); print(' '); print('4'); print('0'); print(')'); print(':'); print(' ');
+        print(s1); 
+        print(eol);
+        print(eol);
+        
+        // --- Test 3: Attempt to remove a non-existent element ---
+        remove(s1, 99);
+        
+        print('A'); print('f'); print('t'); print('e'); print('r'); print(' '); print('r'); print('e'); print('m'); print('o'); print('v'); print('e'); print('('); print('s'); print('1'); print(','); print(' '); print('9'); print('9'); print(')'); print(':'); print(' ');
+        print(s1); 
+        print(eol);
+        print(eol);
+
+        // --- Test 4: Remove remaining elements ---
+        remove(s1, 10);
+        remove(s1, 50);
+        remove(s1, 30);
+
+        print('A'); print('f'); print('t'); print('e'); print('r'); print(' '); print('r'); print('e'); print('m'); print('o'); print('v'); print('i'); print('n'); print('g'); print(' '); print('a'); print('l'); print('l'); print(':'); print(' ');
+        print(s1);
+        print(eol);
+    }
+}

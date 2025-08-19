@@ -1,6 +1,9 @@
-/mjparser_astbuild.cup
-/rs/
-/mod.mj
-/mod.obj
 /goto.mj
 /goto.obj
+/mod.mj
+/mod.obj
+/ord_chr_test.obj
+/remove.mj
+/remove.obj
+/unionTest.mj
+/unionTest.obj

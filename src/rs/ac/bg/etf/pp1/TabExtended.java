@@ -77,6 +77,15 @@ public class TabExtended extends Tab {
         differenceMeth.setLocals(currentScope.getLocals());
         differenceMeth.setLevel(2);
         closeScope();
+        
+        // void remove(set s, int e)
+        Obj removeMeth = insert(Obj.Meth, "remove", Tab.noType);
+        openScope();
+        insert(Obj.Var, "s", setType);
+        insert(Obj.Var, "e", Tab.intType);
+        removeMeth.setLocals(currentScope.getLocals());
+        removeMeth.setLevel(2); // 2 formal parameters
+        closeScope();
 	}
 
 	public static void dump() {
