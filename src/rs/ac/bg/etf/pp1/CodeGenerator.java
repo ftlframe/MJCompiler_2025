@@ -65,50 +65,49 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 	
 	private void generateUnionMethod() {
-		Obj unionMeth = Tab.find("union");
+	    Obj unionMeth = Tab.find("union");
 	    unionMeth.setAdr(Code.pc);
 	    
 	    // enter: 2 params (s2, s3), 1 extra local for the temp_set address
 	    Code.put(Code.enter); Code.put(2); Code.put(3);
 	    int temp_set_slot = 2;
 	    
-	    // --- 1. Calculate capacity and create the temporary set ---
-	    Code.put(Code.load_n + 0); // push s2_addr
-	    Code.put(Code.load_n + 1); // push s3_addr
+	    // --- 1. Calculate capacity: s2[0] + s3[0] ---
+	    loadLocal(0); // push s2_addr
+	    Code.loadConst(0);
+	    Code.put(Code.aload);      // push s2[0]
 	    
-	    Code.put(Code.dup2); Code.loadConst(0); Code.put(Code.aload);
-	    Code.put(Code.dup_x1); Code.put(Code.pop); Code.put(Code.dup_x2); Code.put(Code.pop);
-	    Code.put(Code.dup_x1); Code.put(Code.pop); Code.loadConst(0); Code.put(Code.aload);
-	    Code.put(Code.add); // Stack: new_capacity
+	    loadLocal(1); // push s3_addr
+	    Code.loadConst(0);
+	    Code.put(Code.aload);      // push s3[0]
 	    
+	    Code.put(Code.add);        // Stack: new_capacity
+	    
+	    // --- 2. Create the new temporary set ---
 	    Code.loadConst(1); Code.put(Code.add);
 	    Code.put(Code.newarray); Code.put(1);
 	    Code.put(Code.dup); Code.loadConst(0); Code.loadConst(0); Code.put(Code.astore);
-	    
-	    Code.put(Code.store_n + temp_set_slot); // Save the new set's address
-	    Code.put(Code.pop);
-	    Code.put(Code.pop);
+	    storeLocal(temp_set_slot); // Save the new set's address
 	    // Stack is now clean.
 
-	    // --- 2. Populate the temporary set ---
+	    // --- 3. Populate the temporary set ---
 	    Obj addAllMeth = Tab.find("addAll");
-
 	    // a) Call addAll(temp_set, s2, 1)
-	    Code.put(Code.load_n + temp_set_slot); // push temp_set_addr (dest)
-	    Code.put(Code.load_n + 0);             // push s2_addr (src)
-	    Code.loadConst(1);                   // Push the type tag (1 for set)
+	    loadLocal(temp_set_slot); 
+	    loadLocal(0);             
+	    Code.loadConst(1);                   
 	    Code.put(Code.call);
 	    Code.put2(addAllMeth.getAdr() - Code.pc + 1);
 	    
 	    // b) Call addAll(temp_set, s3, 1)
-	    Code.put(Code.load_n + temp_set_slot); // push temp_set_addr (dest)
-	    Code.put(Code.load_n + 1);             // push s3_addr (src)
-	    Code.loadConst(1);                   // Push the type tag (1 for set)
+	    loadLocal(temp_set_slot); 
+	    loadLocal(1);             
+	    Code.loadConst(1);                   
 	    Code.put(Code.call);
 	    Code.put2(addAllMeth.getAdr() - Code.pc + 1);
 	    
-	    // --- 3. Prepare the return value ---
-	    Code.put(Code.load_n + temp_set_slot); 
+	    // --- 4. Prepare the return value ---
+	    loadLocal(temp_set_slot); 
 	    
 	    Code.put(Code.exit);
 	    Code.put(Code.return_);

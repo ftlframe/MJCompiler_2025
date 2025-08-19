@@ -1,0 +1,91 @@
+program TestAllSelfAssignments
+
+
+set sA, sB;
+
+{
+    void main() {
+    
+        // ==========================================================
+        // --- Test 1: sA = sA union sB ---
+        // ==========================================================
+        print('T'); print('e'); print('s'); print('t'); print('i'); print('n'); print('g'); print(' '); print('U'); print('n'); print('i'); print('o'); print('n'); print(':');
+        print(eol);
+
+        // Setup
+        sA = new set[5];
+        add(sA, 10);
+        add(sA, 20);
+
+        sB = new set[5];
+        add(sB, 20);
+        add(sB, 30);
+
+        print(' '); print('I'); print('n'); print('i'); print('t'); print('i'); print('a'); print('l'); print(' '); print('s'); print('A'); print(':'); print(' ');
+        print(sA); // Expected: 10 20
+        print(eol);
+
+        // Perform the self-assignment operation
+        sA = sA union sB;
+
+        print(' '); print('F'); print('i'); print('n'); print('a'); print('l'); print(' '); print('s'); print('A'); print(':'); print(' ');
+        print(sA); // Expected: 10 20 30
+        print(eol);
+        print(eol);
+
+
+        // ==========================================================
+        // --- Test 2: sA = sA intersection sB ---
+        // ==========================================================
+        print('T'); print('e'); print('s'); print('t'); print('i'); print('n'); print('g'); print(' '); print('I'); print('n'); print('t'); print('e'); print('r'); print('s'); print('e'); print('c'); print('t'); print('i'); print('o'); print('n'); print(':');
+        print(eol);
+
+        // Re-initialize sets for a clean test
+        sA = new set[5];
+        add(sA, 10);
+        add(sA, 20);
+
+        sB = new set[5];
+        add(sB, 20);
+        add(sB, 30);
+
+        print(' '); print('I'); print('n'); print('i'); print('t'); print('i'); print('a'); print('l'); print(' '); print('s'); print('A'); print(':'); print(' ');
+        print(sA); // Expected: 10 20
+        print(eol);
+
+        // Perform the self-assignment operation
+        sA = sA intersection sB;
+
+        print(' '); print('F'); print('i'); print('n'); print('a'); print('l'); print(' '); print('s'); print('A'); print(':'); print(' ');
+        print(sA); // Expected: 20
+        print(eol);
+        print(eol);
+        
+
+        // ==========================================================
+        // --- Test 3: sA = sA difference sB ---
+        // ==========================================================
+        print('T'); print('e'); print('s'); print('t'); print('i'); print('n'); print('g'); print(' '); print('D'); print('i'); print('f'); print('f'); print('e'); print('r'); print('e'); print('n'); print('c'); print('e'); print(':');
+        print(eol);
+
+        // Re-initialize sets for a clean test
+        sA = new set[5];
+        add(sA, 10);
+        add(sA, 20);
+
+        sB = new set[5];
+        add(sB, 20);
+        add(sB, 30);
+
+        print(' '); print('I'); print('n'); print('i'); print('t'); print('i'); print('a'); print('l'); print(' '); print('s'); print('A'); print(':'); print(' ');
+        print(sA); // Expected: 10 20
+        print(eol);
+
+        // Perform the self-assignment operation
+        sA = sA difference sB;
+
+        print(' '); print('F'); print('i'); print('n'); print('a'); print('l'); print(' '); print('s'); print('A'); print(':'); print(' ');
+        print(sA); // Expected: 10
+        print(eol);
+    }
+}

@@ -1,0 +1,41 @@
+
+private void generatePrintLoopMethod() {
+    // enter: 0 params, 1 local (i)
+    Code.put(Code.enter); Code.put(0); Code.put(1);
+    int i_slot = 0;
+    
+    // 1. Initialization
+    Code.loadConst(0);
+    storeLocal(i_slot); // i = 0;
+
+    // 2. Mark Loop Start
+    int loopStart = Code.pc;
+
+    // 3. Evaluate Condition: i < 5
+    loadLocal(i_slot); // push i
+    Code.loadConst(5); // push 5
+
+    // 4. Conditional Jump to End
+    // Jump if NOT (i < 5), i.e., jump if i >= 5
+    Code.putFalseJump(Code.lt, 0); 
+    int exitLoopPatch = Code.pc - 2;
+
+    // 5. Loop Body
+    print('i'); print('=');
+    loadLocal(i_slot);
+    Code.loadConst(5); // width
+    Code.put(Code.print);
+    print('\n');
+
+    // 6. Update
+    Code.put(Code.inc); Code.put(i_slot); Code.put(1); // i++
+
+    // 7. Jump to Start
+    Code.putJump(loopStart);
+
+    // 8. Mark Loop End & Backpatch
+    Code.fixup(exitLoopPatch);
+    
+    Code.put(Code.exit);
+    Code.put(Code.return_);
+}

@@ -1,0 +1,89 @@
+program ComprehensiveSetTests
+
+
+// Declare sets for various scenarios
+set sA, sB, sC, sEmpty, sResult;
+
+{
+    void main() {
+        // --- Setup ---
+        sA = new set[5]; add(sA, 10); add(sA, 20); add(sA, 30);
+        sB = new set[5]; add(sB, 20); add(sB, 30); add(sB, 40);
+        sC = new set[5]; add(sC, 50); add(sC, 60);
+        sEmpty = new set[5];
+        sResult = new set[10];
+
+        // Print initial sets for clarity
+        print('s'); print('A'); print(':'); print(' '); print(sA); print(eol);
+        print('s'); print('B'); print(':'); print(' '); print(sB); print(eol);
+        print('s'); print('C'); print(':'); print(' '); print(sC); print(eol);
+        print(eol);
+
+        // ==========================================================
+        // --- UNION TESTS ---
+        // ==========================================================
+        print('U'); print('N'); print('I'); print('O'); print('N'); print(' '); print('T'); print('E'); print('S'); print('T'); print('S'); print(':'); print(eol);
+
+        // Case 1: Partial Overlap
+        sResult = sA union sB;
+        print('s'); print('A'); print(' '); print('u'); print('n'); print('i'); print('o'); print('n'); print(' '); print('s'); print('B'); print(' '); print('='); print(' ');
+        print(sResult); print(eol); // Expected: 10 20 30 40
+
+        // Case 2: Disjoint Sets
+        sResult = sA union sC;
+        print('s'); print('A'); print(' '); print('u'); print('n'); print('i'); print('o'); print('n'); print(' '); print('s'); print('C'); print(' '); print('='); print(' ');
+        print(sResult); print(eol); // Expected: 10 20 30 50 60
+
+        // Case 3: With an Empty Set
+        sResult = sA union sEmpty;
+        print('s'); print('A'); print(' '); print('u'); print('n'); print('i'); print('o'); print('n'); print(' '); print('E'); print('m'); print('p'); print('t'); print('y'); print(' '); print('='); print(' ');
+        print(sResult); print(eol); // Expected: 10 20 30
+        print(eol);
+
+        // ==========================================================
+        // --- INTERSECTION TESTS ---
+        // ==========================================================
+        print('I'); print('N'); print('T'); print('E'); print('R'); print('S'); print('E'); print('C'); print('T'); print('I'); print('O'); print('N'); print(' '); print('T'); print('E'); print('S'); print('T'); print('S'); print(':'); print(eol);
+
+        // Case 1: Partial Overlap
+        sResult = sA intersection sB;
+        print('s'); print('A'); print(' '); print('i'); print('n'); print('t'); print('e'); print('r'); print('s'); print('e'); print('c'); print('t'); print('i'); print('o'); print('n'); print(' '); print('s'); print('B'); print(' '); print('='); print(' ');
+        print(sResult); print(eol); // Expected: 20 30
+
+        // Case 2: Disjoint Sets
+        sResult = sA intersection sC;
+        print('s'); print('A'); print(' '); print('i'); print('n'); print('t'); print('e'); print('r'); print('s'); print('e'); print('c'); print('t'); print('i'); print('o'); print('n'); print(' '); print('s'); print('C'); print(' '); print('='); print(' ');
+        print(sResult); print(eol); // Expected: (empty set)
+        
+        // Case 3: With an Empty Set
+        sResult = sB intersection sEmpty;
+        print('s'); print('B'); print(' '); print('i'); print('n'); print('t'); print('e'); print('r'); print('s'); print('e'); print('c'); print('t'); print('i'); print('o'); print('n'); print(' '); print('E'); print('m'); print('p'); print('t'); print('y'); print(' '); print('='); print(' ');
+        print(sResult); print(eol); // Expected: (empty set)
+        print(eol);
+
+        // ==========================================================
+        // --- DIFFERENCE TESTS ---
+        // ==========================================================
+        print('D'); print('I'); print('F'); print('F'); print('E'); print('R'); print('E'); print('N'); print('C'); print('E'); print(' '); print('T'); print('E'); print('S'); print('T'); print('S'); print(':'); print(eol);
+
+        // Case 1: Partial Overlap
+        sResult = sA difference sB;
+        print('s'); print('A'); print(' '); print('d'); print('i'); print('f'); print('f'); print('e'); print('r'); print('e'); print('n'); print('c'); print('e'); print(' '); print('s'); print('B'); print(' '); print('='); print(' ');
+        print(sResult); print(eol); // Expected: 10
+
+        // Case 2: Reverse Partial Overlap
+        sResult = sB difference sA;
+        print('s'); print('B'); print(' '); print('d'); print('i'); print('f'); print('f'); print('e'); print('r'); print('e'); print('n'); print('c'); print('e'); print(' '); print('s'); print('A'); print(' '); print('='); print(' ');
+        print(sResult); print(eol); // Expected: 40
+
+        // Case 3: Disjoint Sets
+        sResult = sA difference sC;
+        print('s'); print('A'); print(' '); print('d'); print('i'); print('f'); print('f'); print('e'); print('r'); print('e'); print('n'); print('c'); print('e'); print(' '); print('s'); print('C'); print(' '); print('='); print(' ');
+        print(sResult); print(eol); // Expected: 10 20 30
+        
+        // Case 4: With an Empty Set
+        sResult = sA difference sEmpty;
+        print('s'); print('A'); print(' '); print('d'); print('i'); print('f'); print('f'); print('e'); print('r'); print('e'); print('n'); print('c'); print('e'); print(' '); print('E'); print('m'); print('p'); print('t'); print('y'); print(' '); print('='); print(' ');
+        print(sResult); print(eol); // Expected: 10 20 30
+    }
+}

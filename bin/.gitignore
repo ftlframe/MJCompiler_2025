@@ -6,3 +6,5 @@
 /goto.obj
 /remove.mj
 /clear.mj
+/tests.mj
+/testSelfAssignment.mj
