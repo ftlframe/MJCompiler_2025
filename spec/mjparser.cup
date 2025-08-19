@@ -45,6 +45,7 @@ scan with {:
 :}
 
 terminal PROG, BREAK, CLASS, ELSE, CONST, IF, NEW, PRINT, READ, RETURN, VOID, EXTENDS, CONTINUE, FOR, STATIC, UNION, DIFF, INTERSECTION;
+terminal GOTO;
 terminal PLUS, MINUS, MUL, DIV, MOD, EQUALEQUAL, NOTEQUAL, GREATER, GREATEROREQUAL, LESS, LESSOREQUAL, AND, OR;
 terminal EQUAL, INCREMENT, DECREMENT, SEMI, COLON, COMMA, DOT, LPAREN, RPAREN, LBRACKET, RBRACKET, LBRACE, RBRACE, LAMBDA;
 terminal String IDENT, BOOL;
@@ -53,7 +54,7 @@ terminal Integer NUM;
 
 /* PROGRAM & DECLARATIONS*/
 
-nonterminal Program, Declarations, MethodDeclList;
+nonterminal Program, Declarations, MethodDeclList, LabelDef;
 
 nonterminal FormPars, FormParam, FormalParamsExist, OtherFormParamsList, StatementList;
 nonterminal Statement, PrintConst, ActPars, MoreActPars;
@@ -151,6 +152,10 @@ Statement ::= (StatementDesignatorStatement) DesignatorStatement SEMI
 			|
 			(StatementPrint) PRINT LPAREN Expr PrintConst RPAREN SEMI
 			|
+			(LabelledStatement) LabelDef:L Statement:S
+			|
+			(GotoStmt) GOTO IDENT:targetLabel SEMI
+			|
 			(ErrorStmt) error SEMI:l
 		   	{: parser.report_error("Izvrsen oporavak do ; u liniji " + lleft, null);  :}
 			;		
@@ -225,7 +230,7 @@ OptionBracketExpr ::= (ArrayBracketExpr) BracketExpression:brackExpr1
 					| (NoBracketExpr) /* null */;
 BracketExpression ::= (BracketExpression) LBRACKET Expr:brExpr RBRACKET;
 /* MISC */
-
+LabelDef ::= (LabelDef) IDENT:labelName COLON;
 Type ::= (Type) IDENT:typeName;
 Brackets ::= (BracketsMatrix) LBRACKET RBRACKET | (NoBrackets) /*null*/;
 

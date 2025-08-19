@@ -3,7 +3,9 @@ package rs.ac.bg.etf.pp1;
 import rs.ac.bg.etf.pp1.ast.VisitorAdaptor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import rs.ac.bg.etf.pp1.CounterVisitor.VarCounter;
 import rs.ac.bg.etf.pp1.ast.*;
@@ -21,6 +23,11 @@ public class CodeGenerator extends VisitorAdaptor {
 	public int getMainPc() {
 		return mainPc;
 	}
+	
+	// Maps a label name to its bytecode address (pc)
+	private Map<String, Integer> labelAddresses = new HashMap<>();
+	// Maps an undefined label name to a list of `jmp` instructions that need patching
+	private Map<String, List<Integer>> forwardJumpPatches = new HashMap<>();
 	
 
 	private void storeLocal(int slot) {
@@ -420,6 +427,8 @@ public class CodeGenerator extends VisitorAdaptor {
 	public void visit(MethodDeclNameVOID method) {
 		ensureBuiltInFunctions();
 		this.currentMethod = method.obj;
+	    labelAddresses.clear();
+	    forwardJumpPatches.clear();
 		// Check if this is the main method to record its entry point
 		if ("main".equalsIgnoreCase(method.getMethodName())) {
 			mainPc = Code.pc;
@@ -441,8 +450,11 @@ public class CodeGenerator extends VisitorAdaptor {
 	public void visit(MethodDeclNameType method) {
 		ensureBuiltInFunctions();
 		this.currentMethod = method.obj;
-		method.obj.setAdr(Code.pc); // Set the method's starting address
+		labelAddresses.clear();
+		forwardJumpPatches.clear();
 
+		method.obj.setAdr(Code.pc); // Set the method's starting address
+		
 		// Generate the 'enter' instruction.
 		// Opcode: enter num_params, num_total_vars
 		Code.put(Code.enter);
@@ -797,6 +809,52 @@ public class CodeGenerator extends VisitorAdaptor {
 	        } else {
 	            Code.put(1); // Create a word array.
 	        }
+	    }
+	}
+	
+	/**
+	 * Called when a label definition (e.g., "myLabel:") is encountered.
+	 * It records the current address and patches any pending forward jumps.
+	 */
+	@Override
+	public void visit(LabelDef label) {
+	    String labelName = label.getLabelName();
+	    int labelAddress = Code.pc;
+	    
+	    // Store the address of this label.
+	    labelAddresses.put(labelName, labelAddress);
+
+	    // Check if there are any forward jumps waiting for this label.
+	    if (forwardJumpPatches.containsKey(labelName)) {
+	        // If so, patch all of them to jump to the current address.
+	        for (int addressToPatch : forwardJumpPatches.get(labelName)) {
+	            Code.fixup(addressToPatch);
+	        }
+	        // Remove the entry, as all jumps to this label are now resolved.
+	        forwardJumpPatches.remove(labelName);
+	    }
+	}
+
+	/**
+	 * Called when a "goto label;" statement is encountered.
+	 * It generates a jump instruction, either to a known address (backward jump)
+	 * or with a placeholder for a future address (forward jump).
+	 */
+	@Override
+	public void visit(GotoStmt goTo) {
+	    String targetLabel = goTo.getTargetLabel();
+
+	    // Check if we have already seen the label (it's a backward jump).
+	    if (labelAddresses.containsKey(targetLabel)) {
+	        int targetAddr = labelAddresses.get(targetLabel);
+	        Code.putJump(targetAddr);
+	    } else {
+	        // This is a forward jump. The address is not yet known.
+	        // Generate a jump with a placeholder (0) and save its location to be patched later.
+	        Code.putJump(0);
+	        
+	        // Add the address of the placeholder to our patch list for this label.
+	        forwardJumpPatches.computeIfAbsent(targetLabel, k -> new ArrayList<>()).add(Code.pc - 2);
 	    }
 	}
 

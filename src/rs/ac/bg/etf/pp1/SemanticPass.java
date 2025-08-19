@@ -2,7 +2,9 @@ package rs.ac.bg.etf.pp1;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import rs.ac.bg.etf.pp1.ast.*;
@@ -20,6 +22,11 @@ public class SemanticPass extends VisitorAdaptor {
     int printCallCount = 0;
     int readCallCount = 0;
     int varDeclCount = 0;
+    
+    // Maps a label name to the line number where it was defined
+    private Map<String, Integer> definedLabels = new HashMap<>(); 
+    // Maps an undefined label name to a list of `goto` statements that jump to it
+    private Map<String, List<GotoStmt>> forwardGotos = new HashMap<>();
     
     Logger log = Logger.getLogger(getClass());
 
@@ -160,6 +167,8 @@ public class SemanticPass extends VisitorAdaptor {
     // =================================================================
 
     public void visit(MethodDeclNameVOID methodDeclName) {
+    	definedLabels.clear();
+    	forwardGotos.clear();
         currentMethod = TabExtended.insert(Obj.Meth, methodDeclName.getMethodName(), TabExtended.noType);
         methodDeclName.obj = currentMethod;
         TabExtended.openScope();
@@ -167,6 +176,8 @@ public class SemanticPass extends VisitorAdaptor {
     }
     
     public void visit(MethodDeclNameType methodDeclNameType) {
+    	definedLabels.clear();
+    	forwardGotos.clear();
         currentMethod = TabExtended.insert(Obj.Meth, methodDeclNameType.getMethodName(), methodDeclNameType.getType().struct);
         methodDeclNameType.obj = currentMethod;
         TabExtended.openScope();
@@ -177,6 +188,11 @@ public class SemanticPass extends VisitorAdaptor {
         TabExtended.chainLocalSymbols(currentMethod);
         TabExtended.closeScope();
         currentMethod = null;
+        if (!forwardGotos.isEmpty()) {
+            // If this map isn't empty, there was a goto to a label that was never defined.
+            String undefinedLabel = forwardGotos.keySet().iterator().next();
+            report_error("Greska: Labela '" + undefinedLabel + "' nije definisana.", null);
+        }
     }
     
     // =================================================================
@@ -563,5 +579,25 @@ public class SemanticPass extends VisitorAdaptor {
         }
         
         return actuals;
+    }
+    
+    public void visit(LabelDef label) {
+        String labelName = label.getLabelName();
+        if (definedLabels.containsKey(labelName)) {
+            report_error("Greska: Labela '" + labelName + "' je vec definisana u ovom metodu.", label);
+        } else {
+            definedLabels.put(labelName, label.getLine());
+            // This label was previously a forward reference, so now it's resolved.
+            forwardGotos.remove(labelName); 
+        }
+    }
+    
+    public void visit(GotoStmt goTo) {
+        String targetLabel = goTo.getTargetLabel();
+        // If the label isn't defined yet, it's a forward jump.
+        if (!definedLabels.containsKey(targetLabel)) {
+            forwardGotos.computeIfAbsent(targetLabel, k -> new ArrayList<>()).add(goTo);
+        }
+        // If it is defined, it's a valid backward jump. Nothing more to do here.
     }
 }

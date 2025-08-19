@@ -45,6 +45,7 @@ scan with {:
 :}
 
 terminal PROG, BREAK, CLASS, ELSE, CONST, IF, NEW, PRINT, READ, RETURN, VOID, EXTENDS, CONTINUE, FOR, STATIC, UNION, DIFF, INTERSECTION;
+terminal GOTO;
 terminal PLUS, MINUS, MUL, DIV, MOD, EQUALEQUAL, NOTEQUAL, GREATER, GREATEROREQUAL, LESS, LESSOREQUAL, AND, OR;
 terminal EQUAL, INCREMENT, DECREMENT, SEMI, COLON, COMMA, DOT, LPAREN, RPAREN, LBRACKET, RBRACKET, LBRACE, RBRACE, LAMBDA;
 terminal String IDENT, BOOL;
@@ -56,6 +57,7 @@ terminal Integer NUM;
 nonterminal Program Program;
 nonterminal Declarations Declarations;
 nonterminal MethodDeclList MethodDeclList;
+nonterminal LabelDef LabelDef;
 
 nonterminal FormPars FormPars;
 nonterminal FormParam FormParam;
@@ -162,6 +164,10 @@ Statement ::= (StatementDesignatorStatement) DesignatorStatement:D1 SEMI {: RESU
 			|
 			(StatementPrint) PRINT LPAREN Expr:E1 PrintConst:P2 RPAREN SEMI {: RESULT=new StatementPrint(E1, P2); RESULT.setLine(E1left); :}
 			|
+			(LabelledStatement) LabelDef:L Statement:S {: RESULT=new LabelledStatement(L, S); RESULT.setLine(Lleft); :}
+			|
+			(GotoStmt) GOTO IDENT:targetLabel SEMI {: RESULT=new GotoStmt(targetLabel); RESULT.setLine(targetLabelleft); :}
+			|
 			(ErrorStmt) error SEMI:l
 		   	{: parser.report_error("Izvrsen oporavak do ; u liniji " + lleft, null);  :} {: RESULT=new ErrorStmt(); :}
 			;		
@@ -236,7 +242,7 @@ OptionBracketExpr ::= (ArrayBracketExpr) BracketExpression:brackExpr1 {: RESULT=
 					| (NoBracketExpr) {: RESULT=new NoBracketExpr(); :} /* null */;
 BracketExpression ::= (BracketExpression) LBRACKET Expr:brExpr RBRACKET {: RESULT=new BracketExpression(brExpr); RESULT.setLine(brExprleft); :};
 /* MISC */
-
+LabelDef ::= (LabelDef) IDENT:labelName COLON {: RESULT=new LabelDef(labelName); RESULT.setLine(labelNameleft); :};
 Type ::= (Type) IDENT:typeName {: RESULT=new Type(typeName); RESULT.setLine(typeNameleft); :};
 Brackets ::= (BracketsMatrix) LBRACKET RBRACKET {: RESULT=new BracketsMatrix(); :} | (NoBrackets) {: RESULT=new NoBrackets(); :} /*null*/;
 
