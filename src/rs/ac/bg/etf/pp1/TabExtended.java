@@ -86,6 +86,14 @@ public class TabExtended extends Tab {
         removeMeth.setLocals(currentScope.getLocals());
         removeMeth.setLevel(2); // 2 formal parameters
         closeScope();
+        
+        // void clear(set s)
+        Obj clearMeth = insert(Obj.Meth, "clear", Tab.noType); // void return type
+        openScope();
+        insert(Obj.Var, "s", setType);      // Param 1: a set
+        clearMeth.setLocals(currentScope.getLocals());
+        clearMeth.setLevel(1); // 1 formal parameter
+        closeScope();
 	}
 
 	public static void dump() {

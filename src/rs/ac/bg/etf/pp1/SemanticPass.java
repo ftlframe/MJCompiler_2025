@@ -482,6 +482,17 @@ public class SemanticPass extends VisitorAdaptor {
             return; // Skip generic check
         }
         
+        // SPECIAL CASE for clear(set)
+        if (func.getName().equals("clear")) {
+            List<Struct> actuals = collectActualParams(call.getActPars());
+            if (actuals.size() != 1) {
+                report_error("Greska: Metoda 'clear' ocekuje 1 argument.", call);
+            } else if (actuals.get(0) != TabExtended.setType) {
+                report_error("Greska: Argument za metodu 'clear' mora biti tipa set.", call);
+            }
+            return; // Skip generic check
+        }
+        
         // Generic check for other methods
         checkActualParams(func, call.getActPars(), call);
     }

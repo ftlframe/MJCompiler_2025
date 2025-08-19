@@ -474,6 +474,24 @@ public class CodeGenerator extends VisitorAdaptor {
 	    Code.put(Code.return_);
 	}
 	
+
+	private void generateClearMethod() {
+	    Obj meth = Tab.find("clear");
+	    meth.setAdr(Code.pc);
+	
+	    // enter: 1 param (set), 0 extra locals
+	    Code.put(Code.enter); Code.put(1); Code.put(1);
+	    
+	    // Logic: set[0] = 0;
+	    Code.put(Code.load_n + 0); // push address of set (param 0)
+	    Code.loadConst(0);         // push index 0
+	    Code.loadConst(0);         // push value 0
+	    Code.put(Code.astore);     // Perform the store operation
+	    
+	    Code.put(Code.exit);
+	    Code.put(Code.return_);
+	}
+	
 	private void ensureBuiltInFunctions() {
 	    if (!builtInFunctionsGenerated) {
 	        generateAddMethod();
@@ -482,6 +500,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	        generateIntersectionMethod();
 	        generateDifferenceMethod();
 	        generateRemoveMethod();
+	        generateClearMethod();
 	        builtInFunctionsGenerated = true;
 	    }
 	}

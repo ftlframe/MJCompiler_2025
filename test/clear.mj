@@ -1,0 +1,30 @@
+program TestClearMethod
+
+set my_set;
+
+{
+    void main() {
+        // --- Setup ---
+        my_set = new set[5];
+        add(my_set, 10);
+        add(my_set, 20);
+        add(my_set, 30);
+
+        print('I'); print('n'); print('i'); print('t'); print('i'); print('a'); print('l'); print(' '); print('s'); print('e'); print('t'); print(':'); print(' ');
+        print(my_set); 
+        print(eol);
+
+        // --- Test Clear ---
+        clear(my_set);
+        
+        print('A'); print('f'); print('t'); print('e'); print('r'); print(' '); print('c'); print('l'); print('e'); print('a'); print('r'); print('('); print(')'); print(':'); print(' ');
+        print(my_set);
+        print(eol);
+
+        // --- Verify by adding a new element ---
+        add(my_set, 99);
+        print('A'); print('f'); print('t'); print('e'); print('r'); print(' '); print('r'); print('e'); print('-'); print('a'); print('d'); print('d'); print('i'); print('n'); print('g'); print(':'); print(' ');
+        print(my_set);
+        print(eol);
+    }
+}
